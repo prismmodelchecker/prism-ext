@@ -26,13 +26,17 @@
 
 package explicit;
 
+import java.util.AbstractMap;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.PrimitiveIterator;
+import java.util.Set;
 import java.util.Vector;
 
 import common.IterableStateSet;
@@ -841,7 +845,7 @@ public class MDPModelChecker extends ProbModelChecker
 		n = mdp.getNumStates();
 
 		// Initialise solution vectors. Use (where available) the following in order of preference:
-		// (1) exact answer, if already known; (2) 1.0/0.0 if in yes/no; (3) passed in initial value; (4) initVal
+		// (1) exact answer, if already known; (2) 1.0/0.0 if in yes/no; (3) passed in initial value in init; (4) initVal
 		// where initVal is 0.0 or 1.0, depending on whether we converge from below/above. 
 		initVal = (valIterDir == ValIterDir.BELOW) ? 0.0 : 1.0;
 		if (init != null) {
@@ -2121,7 +2125,7 @@ public class MDPModelChecker extends ProbModelChecker
 		// If required, create/initialise strategy storage
 		// Set choices to -1, denoting unknown
 		// (except for target states, which are -2, denoting arbitrary)
-		if (genStrat || exportAdv || mdpSolnMethod == MDPSolnMethod.POLICY_ITERATION) {
+		if (genStrat || exportAdv || mdpSolnMethod == MDPSolnMethod.POLICY_ITERATION|| mdpSolnMethod == MDPSolnMethod.RTDP) {
 			strat = new int[n];
 			for (int i = 0; i < n; i++) {
 				strat[i] = target.get(i) ? -2 : -1;
@@ -2140,7 +2144,7 @@ public class MDPModelChecker extends ProbModelChecker
 		mainLog.println("target=" + numTarget + ", inf=" + numInf + ", rest=" + (n - (numTarget + numInf)));
 
 		// If required, generate strategy for "inf" states.
-		if (genStrat || exportAdv || mdpSolnMethod == MDPSolnMethod.POLICY_ITERATION) {
+		if (genStrat || exportAdv || mdpSolnMethod == MDPSolnMethod.POLICY_ITERATION|| mdpSolnMethod == MDPSolnMethod.RTDP) {
 			if (min) {
 				// If min reward is infinite, all choices give infinity
 				// So the choice can be arbitrary, denoted by -2; 
@@ -2617,7 +2621,148 @@ public class MDPModelChecker extends ProbModelChecker
 		res.timeTaken = timer / 1000.0;
 		return res;
 	}
+	
+	/**
+	 * Compute expected reachability rewards using RTDP.
+	 * Optionally, store optimal (memoryless) strategy info. 
+	 * @param mdp The MDP
+	 * @param mdpRewards The rewards
+	 * @param target Target states
+	 * @param inf States for which reward is infinite
+	 * @param min Min or max rewards (true=min, false=max)
+	 * @param init Optionally, an initial solution vector (will be overwritten) 
+	 * @param known Optionally, a set of states for which the exact answer is known
+	 * @param strat Storage for (memoryless) strategy choice indices (ignored if null)
+	 * Note: if 'known' is specified (i.e. is non-null, 'init' must also be given and is used for the exact values.
+	 */
+	protected ModelCheckerResult computeReachRewardsRTDP(MDP mdp, MDPRewards mdpRewards, BitSet target, BitSet inf, boolean min, double init[], BitSet known, int strat[])
+			throws PrismException
+	{
+		ModelCheckerResult res;
+		BitSet unknown;
+		int i, iters;
+		boolean done=false;
+		long timer;
 
+		// Start real time dynamic programming
+		timer = System.currentTimeMillis();
+		mainLog.println("Starting real time dynamic programming (" + (min ? "min" : "max") + ")...");
+
+		// Store num states
+		int n = mdp.getNumStates();
+
+		// Create solution vector(s)
+		double soln[] = new double[n];
+
+		// Initialise solution vectors. Use (where available) the following in order of preference:
+		// (1) exact answer, if already known; (2) 0.0/infinity if in target/inf; (3) passed in initial value; (4) 0.0
+		if (init != null) {
+			if (known != null) {
+				for (i = 0; i < n; i++)
+					soln[i]  = known.get(i) ? init[i] : target.get(i) ? 0.0 : inf.get(i) ? Double.POSITIVE_INFINITY : init[i];
+			} else {
+				for (i = 0; i < n; i++)
+					soln[i] = target.get(i) ? 0.0 : inf.get(i) ? Double.POSITIVE_INFINITY : init[i];
+			}
+		} else {
+			for (i = 0; i < n; i++)
+				soln[i] = target.get(i) ? 0.0 : inf.get(i) ? Double.POSITIVE_INFINITY : 0.0;
+		}
+
+		// Determine set of states actually need to compute values for
+		unknown = new BitSet();
+		unknown.set(0, n);
+		unknown.andNot(target);
+		unknown.andNot(inf);
+		if (known != null)
+			unknown.andNot(known);
+	
+		//HashMapfor storing real time values for "unknown" states, entries are allocated on the go, values are updated every trial
+		HashMap<Integer, Double> vhash= new HashMap<>();
+		HashMap<Integer, Double> vhash_backUp= new HashMap<>();
+		int s0=0;
+		if(unknown.isEmpty()){
+			done=true;			
+		}
+		else{	
+			s0=PrismUtils.pickRandomSetBit(unknown);
+			vhash.put(s0, 0.0);
+			vhash_backUp.put(s0, 0.0);
+		}
+		
+		// Start iterations
+		iters = 0;		
+		while (!done && iters < maxIters) {
+			iters++;			
+			int s = s0;			
+			while(s >= 0)//trial
+			{	
+				//evaluate each action in s
+				double value=mdp.mvMultRewMinMaxSingle(s, soln, vhash, mdpRewards, min, strat);
+				//selction action that minimizes/maximizes Q(a,s)
+				int action=strat[s];
+				//update V(s)
+				vhash.put(s, value);
+	
+				/********************sample next state with probability P_action(nextstate|s)*********************/
+				Iterator<Entry<Integer, Double>> tranIter = mdp.getTransitionsIterator(s, action);
+				// cumalative distribution function
+				ArrayList<Entry<Integer, Double>> cdf = new ArrayList<>();
+				double sum=0;
+				while(tranIter.hasNext())
+				{
+					Entry<Integer, Double> dist=tranIter.next();
+					sum += dist.getValue();
+					cdf.add(new AbstractMap.SimpleEntry<Integer, Double>(dist.getKey(), sum));					
+				}
+				double prob=Math.random();				
+				int nextState = PrismUtils.pickFromDistribution(cdf, prob);
+				/********************end of sampling next state with probability P_action(nextstate|s)*********************/
+				// if next state is known, go to next trial
+				if(!unknown.get(nextState))
+					break;
+				else
+				{//go on with this trial
+					s = nextState;
+				}
+				
+			}							
+			// Check termination
+			done = PrismUtils.hashMapsAreClose(vhash, vhash_backUp, termCritParam, termCrit == TermCrit.ABSOLUTE);
+			// back up	
+			Set<Map.Entry<Integer, Double>> entries = vhash.entrySet();
+			for(Map.Entry<Integer, Double> entry: entries)
+			{
+				vhash_backUp.put(entry.getKey(), entry.getValue());				
+			}
+		}
+		
+		Set<Map.Entry<Integer, Double>> entries = vhash.entrySet();
+		for(Map.Entry<Integer, Double> entry: entries)
+		{
+			soln[entry.getKey()]=entry.getValue();
+		}
+
+		// Finished real tiem dynamic programming
+		timer = System.currentTimeMillis() - timer;
+		mainLog.print("Real time dynamic programming (" + (min ? "min" : "max") + ")");
+		mainLog.println(" took " + iters + " iterations and " + timer / 1000.0 + " seconds.");
+
+		// Non-convergence is an error (usually)
+		if (!done && errorOnNonConverge) {
+			String msg = "Iterative method did not converge within " + iters + " iterations.";
+			msg += "\nConsider using a different numerical method or increasing the maximum number of iterations";
+			throw new PrismException(msg);
+		}
+
+		// Return results
+		res = new ModelCheckerResult();
+		res.soln = soln;
+		res.numIters = iters;
+		res.timeTaken = timer / 1000.0;
+		return res;
+	}
+	
 	/**
 	 * Construct strategy information for min/max expected reachability.
 	 * (More precisely, list of indices of choices resulting in min/max.)

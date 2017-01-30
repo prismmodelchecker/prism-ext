@@ -1,0 +1,6 @@
+// probability all tasks complete
+Pmin=?[F "tasks_complete" ]; 
+// min expected time to complete all tasks
+R{"time"}min=?[F "tasks_complete" ]; 
+// min expected energy to complete all tasks
+R{"energy"}min=?[F "tasks_complete" ]; 

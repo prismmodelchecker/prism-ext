@@ -34,7 +34,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
-
 import parser.State;
 import parser.Values;
 import parser.VarList;
@@ -63,7 +62,8 @@ public abstract class ModelExplicit implements Model
 
 	/** (Optionally) information about the states of this model,
 	 * i.e. the State object corresponding to each state index. */
-	protected List<State> statesList;
+	protected List<State> statesList;	
+	
 	/** (Optionally) a list of values for constants associated with this model. */
 	protected Values constantValues;
 	/** (Optionally) the list of variables */
@@ -95,7 +95,7 @@ public abstract class ModelExplicit implements Model
 		// Shallow copy of read-only stuff
 		statesList = model.statesList;
 		constantValues = model.constantValues;
-		labels = model.labels;
+		labels = model.labels;		
 		varList = model.varList;
 	}
 
@@ -108,7 +108,7 @@ public abstract class ModelExplicit implements Model
 	 */
 	public void copyFrom(ModelExplicit model, int permut[])
 	{
-		numStates = model.numStates;
+		numStates = model.numStates;		
 		for (int in : model.initialStates) {
 			addInitialState(permut[in]);
 		}
@@ -129,7 +129,7 @@ public abstract class ModelExplicit implements Model
 	public void initialise(int numStates)
 	{
 		this.numStates = numStates;
-		initialStates = new ArrayList<Integer>();
+		initialStates = new ArrayList<Integer>();		
 		deadlocks = new TreeSet<Integer>();
 		statesList = null;
 		constantValues = null;
@@ -160,6 +160,8 @@ public abstract class ModelExplicit implements Model
 	{
 		deadlocks.add(i);
 	}
+	
+	
 
 	/**
 	 * Build (anew) from a list of transitions exported explicitly by PRISM (i.e. a .tra file).
@@ -251,6 +253,7 @@ public abstract class ModelExplicit implements Model
 	@Override
 	public abstract ModelType getModelType();
 
+	
 	@Override
 	public int getNumStates()
 	{
@@ -322,6 +325,8 @@ public abstract class ModelExplicit implements Model
 		return statesList;
 	}
 
+	
+	
 	@Override
 	public Values getConstantValues()
 	{

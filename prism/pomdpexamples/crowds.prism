@@ -1,0 +1,78 @@
+// Crowds model - extension of Kostas' model from following paper
+// Anonymity protocols as noisy channels
+// Konstantinos Chatzikokolakis, Catuscia Palamidessi and Prakash Panangaden
+// gxn 09/08/14
+
+pomdp
+
+observables
+	detected, delivered, guess, correct
+endobservables
+
+const double pf=.9;
+
+const int user0=0;
+const int user1=1;
+const int user2=2;
+const int user3=3;
+
+const int myself=-100;
+const int neighb1=-100;
+const int neighb2=-100;
+const int neighb3=-100;
+const int neighb4=-100;
+
+global initiator: [-1..4] init -1;
+
+global curUser: [-1..4] init -1;		// the user who has the message now
+global prevUser: [-1..4] init -1;		// the user who *sent* the message last
+
+global delivered: bool init false;		// has the message arrived to the server?
+global detected: [-1..4] init -1;		// the user detected by the attacker
+
+global guess : [-1..4] init -1;
+global correct : [0..1] init 0;
+
+module Init
+	// select an initiator
+	[] initiator=-1 & curUser=-1 -> 1/3 : (initiator'=user0) + 
+	1/3 : (initiator'=user1) + 1/3 : (initiator'=user3);
+
+	//[] initiator=-1 & curUser=-1 -> (initiator'=user0);
+	//[] initiator=-1 & curUser=-1 -> (initiator'=user1);
+	// [] initiator=-1 & curUser=-1 -> (initiator'=user2);
+	//[] initiator=-1 & curUser=-1 -> (initiator'=user3);
+
+	// forward the message from the initiator to a user
+	[] initiator != -1 & curUser=-1 ->
+		1/4: (prevUser'=initiator) & (curUser'=user0) +
+		1/4: (prevUser'=initiator) & (curUser'=user1) +
+		1/4: (prevUser'=initiator) & (curUser'=user2) +
+		1/4: (prevUser'=initiator) & (curUser'=user3);
+endmodule
+
+module User
+	[] curUser=myself & !delivered ->
+			(1-pf): (delivered'=true) +
+			pf/4: (prevUser'=curUser) & (curUser'=neighb1) +
+			pf/4: (prevUser'=curUser) & (curUser'=neighb2) +
+			pf/4: (prevUser'=curUser) & (curUser'=neighb3) +
+			pf/4: (prevUser'=curUser) & (curUser'=neighb4);
+endmodule
+
+module Attacker
+	[] curUser=myself & !delivered -> (delivered'=true) & (detected'=prevUser);
+	[] myself=2 & delivered & guess=-1 -> (guess'=user0);
+	[] myself=2 & delivered & guess=-1 -> (guess'=user1);
+	//[] curUser=myself & delivered & guess=-1 -> (guess'=user2);
+	[] myself=2 & delivered & guess=-1 -> (guess'=user3);
+	[] myself=2 & guess>=0 & guess=initiator -> (correct'=1); 
+	[] myself=2 & guess>=0 & !guess=initiator -> (correct'=0); 
+endmodule
+
+module User0=User [myself=user0, neighb1=user0, neighb2=user1, neighb3=user2, neighb4=user3] endmodule
+module User1=User [myself=user1, neighb1=user0, neighb2=user1, neighb3=user2, neighb4=user3] endmodule
+module User2=Attacker [myself=user2] endmodule
+module User3=User [myself=user3, neighb1=user0, neighb2=user1, neighb3=user2, neighb4=user3] endmodule
+
+

@@ -30,9 +30,14 @@ import java.io.FileNotFoundException;
 import java.io.PrintStream;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
+import java.util.ArrayList;
+import java.util.BitSet;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.PrimitiveIterator;
+import java.util.Map.Entry;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -133,6 +138,36 @@ public class PrismUtils
 		}
 		return true;
 	}
+	
+	/**
+	 * See if two arrays of doubles are all within epsilon of each other (relative or absolute error).
+	 */
+	public static boolean hashMapsAreClose(HashMap map1, HashMap map2, double epsilon, boolean abs)
+	{
+		if (map1.size()!=map2.size()){
+			return false;
+		}
+		Set<Entry> entries= map1.entrySet();
+		for (Entry entry : entries)
+		{
+			double d1=(double) entry.getValue();
+			double d2;
+			if(map2.get(entry.getKey())!=null){
+				d2=(double) map2.get(entry.getKey());
+				if (abs) {				
+					if (!PrismUtils.doublesAreCloseAbs(d1, d2, epsilon))
+						return false;				
+				} else {				
+					if (!PrismUtils.doublesAreCloseRel(d1, d2, epsilon))
+						return false;				
+				}
+			}else {
+				return false;
+			}
+		}		
+		return true;
+	}
+
 
 	/**
 	 * See if, for all the entries given by the {@code indizes}
@@ -520,6 +555,230 @@ public class PrismUtils
 		}
 		return s;
 	}
+	
+	public static void normalizeArray(double[] originalArr)
+	{
+		double sum = 0;
+		int arrSize = originalArr.length;
+		for (int i = 0; i < arrSize; i++) {
+			sum += originalArr[i];
+		}
+		if (sum == 0) {
+			for (int i = 0; i < arrSize; i++) {
+				originalArr[i] = 1.0 / arrSize;
+			}
+		} else {
+			for (int i = 0; i < arrSize; i++) {
+				originalArr[i] /= sum;
+			}
+		}
+	}
+		
+	public static boolean isTargetBlief(double[] belief, BitSet target)
+	{
+		 double prob=0;
+		 for (int i = target.nextSetBit(0); i >= 0; i = target.nextSetBit(i+1)) 
+		 {
+			 prob+=belief[i];
+		 }
+		 if(Math.abs(prob-1.0)<1.0e-6)
+		 {
+			 return true;
+		 }
+		 return false;
+	}
+	
+	 /** Picks a random item from an array of probabilities,
+    normalized and summed as follows:  For example,
+    if four probabilities are {0.3, 0.2, 0.1, 0.4}, then
+    they should get normalized and summed by the outside owners
+    as: {0.3, 0.5, 0.6, 1.0}.  If probabilities.length < checkboundary,
+    then a linear search is used, else a binary search is used.    
+*/
+
+	public static int pickFromDistribution(final double[] dist,final double prob)
+	{
+	    if (prob<0.0 || prob>1.0)
+	        throw new ArithmeticException("Invalid probability for pickFromDistribution (must be 0.0<=x<=1.0)");
+	    if (dist.length==1) // quick 
+	        return 0;
+	    double[] probabilities = organizeDistribution(dist, false);
+        // binary search
+        int top = probabilities.length-1;
+        int bottom = 0;
+        int cur;
+
+        while(top!=bottom)
+        {
+            cur = (top + bottom) / 2; // integer division
+
+            if (probabilities[cur] > prob)
+                if (cur==0 || probabilities[cur-1] <= prob)
+                    return exemptZeroes(probabilities,cur);
+                else // step down
+                    top = cur;
+            else if (cur==probabilities.length-1) // oops
+                return exemptZeroes(probabilities,cur);
+            else if (bottom==cur) // step up
+                bottom++;  // (8 + 9)/2 = 8
+            else
+                bottom = cur;  // (8 + 10) / 2 = 9
+        }
+        
+        return exemptZeroes(probabilities,bottom);  // oops
+	    
+	}
+	
+	
+    public static int pickFromDistribution(final ArrayList<Entry<Integer, Double>> cdf, final double prob)
+    {
+    	// binary search
+        int top = cdf.size()-1;
+        int bottom = 0;
+        int cur;
+       
+        while(top!=bottom)
+        {
+            cur = (top + bottom) / 2; // integer division
+
+            if (cdf.get(cur).getValue() > prob)
+                if (cur==0 || cdf.get(cur-1).getValue() <= prob){
+                	return cdf.get(cur).getKey();
+                }	                        
+                else // step down
+                    top = cur;
+            else if (cur==cdf.size()-1)
+            	return cdf.get(cur).getKey();
+            else if (bottom==cur) // step up
+                bottom++;  // (8 + 9)/2 = 8
+            else
+                bottom = cur;  // (8 + 10) / 2 = 9
+        }
+    	return cdf.get(bottom).getKey();
+    }
+    
+    // allows us to have zero-probability values
+    private static final int exemptZeroes(final double[] probabilities, int index)
+    {
+        //System.out.println(index);
+        if (probabilities[index]==0.0) // I need to scan forward because I'm in a left-trail
+            // scan forward
+            { while(index < probabilities.length-1 && probabilities[index]==0.0) index++; }
+        else
+            // scan backwards
+            { while(index > 0 && probabilities[index]==probabilities[index-1]) index--; }
+        return index;
+    }
+    
+    /** Normalizes probabilities, then converts them into continuing
+    sums.  This prepares them for being usable in pickFromDistribution.
+    If the probabilities are all 0, then selection is uniform, unless allowAllZeros
+    is false, in which case an ArithmeticException is thrown.  If any of them are negative,
+    or if the distribution is empty, then an ArithmeticException is thrown.
+    For example, 
+    {0.6, 0.4, 0.2, 0.8} -> {0.3, 0.2, 0.1, 0.4} -> {0.3, 0.5, 0.6, 1.0} */
+	public static double[] organizeDistribution(final double[] probabilities, final boolean allowAllZeros)
+	{
+		double[] dist = probabilities.clone();
+	    // first normalize
+	    double sum=0.0;
+	
+	    if (dist.length == 0)
+	        throw new ArithmeticException("Distribution has no elements");
+	
+	    for(int x=0;x<dist.length;x++)
+	        {
+	        if (dist[x]<0.0)
+	            throw new ArithmeticException("Distribution has negative probabilities");
+	        sum += dist[x];
+	        }
+	
+	    if (sum==0.0)
+	        if (!allowAllZeros)
+	            throw new ArithmeticException("Distribution has all zero probabilities");
+	        else
+	            {
+	            for(int x=0;x<dist.length;x++)
+	                dist[x] = 1.0;
+	            sum = dist.length;
+	            }
+	    
+	    for(int x=0;x<dist.length;x++)
+	        dist[x] /= sum;
+	
+	    // now sum
+	    sum=0.0;
+	    for(int x=0;x<dist.length;x++)
+	        {
+	        sum += dist[x];
+	        dist[x] = sum;
+	        }
+	    
+	    // now we need to work backwards setting 0 values
+	    int x;
+	    for(x=dist.length-1; x > 0; x--)
+	        if (dist[x]==dist[x-1])  // we're 0.0
+	            dist[x] = 1.0;
+	        else break; 
+	    dist[x] = 1.0;
+	
+	    return dist;
+	}
+		
+	
+	public static int pickRandomSetBit(BitSet bits)
+	{
+		int numSetBit = bits.cardinality();
+		int[] setBits = new int[numSetBit];
+		for(int i=bits.nextSetBit(0),k=0; (i>=0)&&(k<numSetBit); i=bits.nextSetBit(i+1), k++)
+		{
+			setBits[k]=i;
+		}
+		int rand=(int) Math.floor(numSetBit*Math.random());
+		
+		return setBits[rand];
+	}
+	
+	public static double[] UnboxDoubleArrayList(ArrayList<Double> input)
+	{
+		double[] result= new double[input.size()];
+		for(int i=0;i<input.size();i++)
+		{
+			result[i]=input.get(i);
+		}		
+		return result;
+	}
+	
+	 /**
+     * Calculate the factorial of n.
+     *
+     * @param n the number to calculate the factorial of.
+     * @return n! - the factorial of n.
+     */
+    public static long fact(int n) 
+    {
+		// Base Case: 
+		//    If n <= 1 then n! = 1.
+		if (n <= 1) {
+		    return 1;
+		}
+		// Recursive Case:  
+		//    If n > 1 then n! = n * (n-1)!
+		else {
+		    return n * fact(n-1);
+		}
+    }
+    
+    public static String bitSet2BinaryString(BitSet bs)
+    {
+    	StringBuffer sb = new StringBuffer();
+
+        for (int i = 0; i < bs.size(); i++) {
+          sb.append((bs.get(i)) ? '1' : '0');
+        }
+
+        return sb.toString();
+    }
 	
 	/**
 	 * Check for any cycles in an 2D boolean array representing a graph.

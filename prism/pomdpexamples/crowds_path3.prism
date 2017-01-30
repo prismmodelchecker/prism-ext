@@ -1,0 +1,101 @@
+// Crowds network (including path reformulation)
+// based on...
+// Probabilistic Analysis of Network Anonymity using PRISM
+// by M.T. Adithia
+// have tried to simplify combining steps and removing variables when not needed
+// gxn 09/08/14
+
+pomdp
+
+observables
+	countrun, bad, done, observe0, observe1, observe2, guess, correct, deliver
+endobservables
+
+// Probability of forwarding
+const double    PF=0.8;
+const double notPF=0.2;
+
+// Probability that a crowd member is honest or corrupt
+const double bmember=0.167; // or 0.091
+const double gmember=0.833; // or 0.909
+
+
+const int TotalAns; // The number of path reformulations
+
+module crowds
+
+	initiator : [0..2]; // the initiator of the protocol 
+	// initially undefined so uniform choice
+
+    // steps of the protocol (could have as a program counter)
+    start : bool init true; // The protocol is started to run
+	choose : bool init false; // choose at random the next member on the path
+    
+    countrun : [0..TotalAns] init TotalAns; // number of paths generated
+
+    member : [0..2] init 0;   // current member on the path
+
+    deliver : bool init false; // The request is sent to the end server
+
+    good : bool init false; // Possible honest member chosen
+    bad : bool init false; // A corrupt member is chosen
+
+    next : bool init false; // Decide the next step, forward or deliver
+
+    observe0 : [0..TotalAns] init 0; // # observations done by the attackers to member0
+    observe1 : [0..TotalAns] init 0; // # observations done by the attackers to member1
+    observe2 : [0..TotalAns] init 0; // # observations done by the attackers to member2
+    
+    guess : [-1..2] init -1; // guess as to who sent
+    correct : [0..1] init 0; // correctly guessed
+    done : bool init false; // finished
+    
+    // randomly select the initiator and start the protocol
+ 	[] start & countrun=TotalAns  ->  1/3 : (initiator'=0) & (member'=0) & (start'=false) 
+ 										  & (countrun'=countrun-1) & (choose'=true)
+ 									+ 1/3 : (initiator'=1) & (member'=1) & (start'=false)
+										  & (countrun'=countrun-1) & (choose'=true)
+									+ 1/3 : (initiator'=2) & (member'=2) & (start'=false)
+										  & (countrun'=countrun-1) & (choose'=true);
+    
+    // new path (initiator is the first member on the path)
+    [] start  & countrun<TotalAns -> (start'=false) & (countrun'=countrun-1) & (choose'=true) & (member'=initiator);
+    
+    // now choose next member first either honest or corrupt
+    [] choose -> gmember: (good'=true) & (choose'=false) +
+                 bmember: (bad'=true) & (choose'=false);
+    
+    // if honest... 3 possibilities of the honest members chosen
+    [] good -> 1/3 : (member'=0) & (next'=true) & (good'=false) +
+               1/3 : (member'=1) & (next'=true) & (good'=false) +
+               1/3 : (member'=2) & (next'=true) & (good'=false);
+               
+    // then honest member decides whether forward the request or deliver it
+    [] next -> PF : (choose'=true) & (next'=false) + notPF : (deliver'=true) & (next'=false);
+
+    
+    // if a corrupt member... observes the previous member in the path
+    [] bad & (member=0) & (observe0 < TotalAns) ->
+                   (observe0'=observe0 + 1) & (deliver'=true) & (bad'=false);
+    [] bad & (member=1) & (observe1 < TotalAns) ->
+                   (observe1'=observe1 + 1) & (deliver'=true) & (bad'=false);
+    [] bad & (member=2) & (observe2 < TotalAns) ->
+                   (observe2'=observe2 + 1) & (deliver'=true) & (bad'=false);
+    
+    // generate another path
+    [] deliver & countrun>0  -> (deliver'=false) & (start'=true);
+	
+	// all paths generated so guess the initiator
+    [] deliver & countrun=0 & guess=-1 -> (guess'=0);
+    [] deliver & countrun=0 & guess=-1 -> (guess'=1);
+    [] deliver & countrun=0 & guess=-1 -> (guess'=2);
+    
+    // finish and check correctness
+    [done] guess>=0 & guess=initiator -> (done'=true) & (correct'=1);
+    [done] guess>=0 & guess!=initiator -> (done'=true);
+
+endmodule
+
+rewards
+        [done] (guess=initiator) : 1;
+endrewards

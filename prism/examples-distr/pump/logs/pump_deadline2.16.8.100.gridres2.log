@@ -1,0 +1,85 @@
+PRISM
+=====
+
+Version: 4.2.pomdps
+Date: Wed Oct 22 10:45:28 BST 2014
+Hostname: ponza.dcs.gla.ac.uk
+Command line: prism pump_deadline.prism pump.props -prop 2 -const 'h0=2,h1=16,N=8,D=100' -gridresolution 2
+
+Parsing model file "pump_deadline.prism"...
+
+Parsing properties file "pump.props"...
+
+4 properties:
+(1) Pmin=? [ F correct=1 ]
+(2) Pmax=? [ F correct=1 ]
+(3) Rmin=? [ F l=2 ]
+(4) Rmin=? [ F l=2 ]
+
+Type:        POMDP
+Modules:     timer high pump low 
+Variables:   t (bit) p y l m guess correct x 
+
+Switching to explicit engine
+
+---------------------------------------------------------------------
+
+Model checking: Pmax=? [ F correct=1 ]
+Model constants: h0=2,h1=16,N=8,D=100
+
+Building model...
+Model constants: h0=2,h1=16,N=8,D=100
+
+Computing reachable states...
+ 59287 states
+Reachable states exploration and model construction done in 0.723 secs.
+Sorting reachable states list...
+
+Time for model construction: 11.777 seconds.
+
+Warning: Deadlocks detected and fixed in 308 states
+
+Type:        POMDP
+States:        59287 (1 initial)
+Transitions:   75974
+Choices:       62893
+Max/avg:       2/1.06
+Observables:   31743
+Unobservables: 3
+
+Starting probabilistic reachability (max)...
+Starting fixed-resolution grid approximation (max)...
+Grid statistics: resolution=2, points=86832, unknown points=84732
+Building belief space approximation...
+Solving belief space approximation...
+
+Strategy DTMC:
+States:      43499 (1 initial)
+Transitions: 53299
+Choices:     43359
+Max/avg:     1/1.00
+
+Starting probabilistic reachability (min)...
+Starting Prob0 (min)...
+Prob0 (min) took 48 iterations and 0.206 seconds.
+Starting Prob1 (min)...
+Prob1 (min) took 2239 iterations and 10.245 seconds.
+target=140, yes=1031, no=2759, maybe=39709
+Starting value iteration (min)...
+Value iteration (min) took 205 iterations and 1.092 seconds.
+Probabilistic reachability took 11.547 seconds.
+Outer bound: 0.5321005637667303
+Inner bound: 0.5314115921556684
+Fixed-resolution grid approximation (max) took 208 iterations and 266.569 seconds.
+Probabilistic reachability took 266.57 seconds.
+
+Value in the initial state: 0.5321005637667303
+
+Time for model checking: 266.595 seconds.
+
+Result: 0.5321005637667303 (value in the initial state)
+
+---------------------------------------------------------------------
+
+Note: There was 1 warning during computation.
+

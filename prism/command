@@ -1,0 +1,13 @@
+pomdpexamples/4x3maze.prism pomdpexamples/4x3maze.props -prop 1 -ex  -v -rtdp_bel
+
+pomdpexamples/4x3maze.prism pomdpexamples/4x3maze.props -prop 1 -ex  -v -rtdp
+
+pomdpexamples/4x3maze.prism pomdpexamples/4x3maze.props -prop 1 -ex  -v -fixed_grid -exportadv "policyGraph.txt"
+
+pomdpexamples/cheese_maze.nm pomdpexamples/cheese_maze.props -prop 1 -ex  -v -rtdp_bel
+
+pomdpexamples/cheese_maze.nm pomdpexamples/cheese_maze.props -prop 1 -ex  -v -fixed_grid
+
+pomdpexamples/repudiation.prism pomdpexamples/repudiation.props -ex -v -fixed_grid -prop 3 -const K=5 -gridresolution 20 -exportadv "policyGraph.txt"
+
+pomdpexamples/crypt3_sync.prism pomdpexamples/crypt3.props -prop 1 -ex  -v -fixed_grid  -gridresolution 5

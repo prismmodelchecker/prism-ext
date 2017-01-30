@@ -1,0 +1,83 @@
+PRISM
+=====
+
+Version: 4.2.pomdps
+Date: Wed Oct 22 10:57:39 BST 2014
+Hostname: ponza.dcs.gla.ac.uk
+Command line: prism repudiation.prism repudiation.props -const K=4 -gridresolution 8
+
+Parsing model file "repudiation.prism"...
+
+Parsing properties file "repudiation.props"...
+
+1 property:
+(1) Pmax=? [ F "unfair" ]
+
+Type:        POPTA
+Modules:     originator malicious_recipient 
+Variables:   o (N) ack x r mess last y 
+
+Switching to explicit engine
+
+---------------------------------------------------------------------
+
+Model checking: Pmax=? [ F "unfair" ]
+Model constants: K=4
+
+Performing digital clocks translation...
+Computed clock maximums: {y=1, x=4}
+Computed GCD: 1
+
+Model checking: Pmax=? [ F "unfair" ]
+Model constants: K=4
+
+Building model...
+Model constants: K=4
+
+Computing reachable states...
+ 365 states
+Reachable states exploration and model construction done in 0.116 secs.
+Sorting reachable states list...
+
+Time for model construction: 0.163 seconds.
+
+Type:        POMDP
+States:        365 (1 initial)
+Transitions:   528
+Choices:       525
+Max/avg:       3/1.44
+Observables:   194
+Unobservables: 5
+
+Starting probabilistic reachability (max)...
+Starting fixed-resolution grid approximation (max)...
+Grid statistics: resolution=8, points=5734, unknown points=5690
+Building belief space approximation...
+Solving belief space approximation...
+
+Strategy DTMC:
+States:      45 (1 initial)
+Transitions: 47
+Choices:     44
+Max/avg:     1/0.98
+
+Starting probabilistic reachability (min)...
+Starting Prob0 (min)...
+Prob0 (min) took 27 iterations and 0.002 seconds.
+Starting Prob1 (min)...
+Prob1 (min) took 43 iterations and 0.002 seconds.
+target=1, yes=8, no=18, maybe=19
+Starting value iteration (min)...
+Value iteration (min) took 20 iterations and 0.001 seconds.
+Probabilistic reachability took 0.006 seconds.
+Outer bound: 0.28125
+Inner bound: 0.25
+Fixed-resolution grid approximation (max) took 13 iterations and 0.934 seconds.
+Probabilistic reachability took 0.934 seconds.
+
+Value in the initial state: 0.28125
+
+Time for model checking: 0.938 seconds.
+
+Result: 0.28125 (value in the initial state)
+

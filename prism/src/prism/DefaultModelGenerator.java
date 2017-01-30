@@ -87,6 +87,13 @@ public abstract class DefaultModelGenerator implements ModelGenerator
 	@Override
 	public abstract List<Type> getVarTypes();
 	
+
+	@Override
+	public List<String> getObservableVars()
+	{
+		return Collections.emptyList();
+	}
+	
 	@Override
 	public int getNumLabels()
 	{

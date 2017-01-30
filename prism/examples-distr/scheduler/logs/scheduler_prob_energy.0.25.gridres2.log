@@ -1,0 +1,85 @@
+PRISM
+=====
+
+Version: 4.2.pomdps
+Date: Wed Oct 22 11:39:40 BST 2014
+Hostname: ponza.dcs.gla.ac.uk
+Command line: prism scheduler_prob.prism scheduler.props -prop 3 -const prob1=0.25 -gridresolution 2
+
+Parsing model file "scheduler_prob.prism"...
+
+Parsing properties file "scheduler.props"...
+
+3 properties:
+(1) Pmin=? [ F "tasks_complete" ]
+(2) R{"time"}min=? [ F "tasks_complete" ]
+(3) R{"energy"}min=? [ F "tasks_complete" ]
+
+Type:        POPTA
+Modules:     scheduler P1 P2 
+Variables:   task1 task2 task3 task4 task5 task6 p1 c1 (sleep1) x1 p2 c2 x2 
+
+Switching to explicit engine
+
+---------------------------------------------------------------------
+
+Model checking: R{"energy"}min=? [ F "tasks_complete" ]
+Model constants: prob1=0.25
+
+Performing digital clocks translation...
+Computed clock maximums: {x2=6, x1=6}
+Computed GCD: 1
+
+Model checking: R{"energy"}min=? [ F "tasks_complete" ]
+Model constants: prob1=0.25
+
+Building model...
+Model constants: prob1=0.25
+
+Computing reachable states...
+ 6987 states
+Reachable states exploration and model construction done in 0.42 secs.
+Sorting reachable states list...
+
+Time for model construction: 0.794 seconds.
+
+Type:        POMDP
+States:        6987 (1 initial)
+Transitions:   14029
+Choices:       12309
+Max/avg:       5/1.76
+Observables:   5381
+Unobservables: 2
+Building reward structure...
+
+Starting expected reachability (min)...
+Starting fixed-resolution grid approximation (min)...
+Grid statistics: resolution=2, points=8593, unknown points=8467
+Building belief space approximation...
+Solving belief space approximation...
+initialBelief: {0},[1.0, 0.0]
+
+Strategy DTMC:
+States:      105 (1 initial)
+Transitions: 120
+Choices:     104
+Max/avg:     1/0.99
+
+Starting expected reachability (min)...
+Starting Prob1 (max)...
+Prob1 (max) took 45 iterations and 0.005 seconds.
+target=1, inf=0, rest=104
+Starting value iteration (min)...
+Value iteration (min) took 61 iterations and 0.007 seconds.
+Expected reachability took 0.012 seconds.
+Outer bound: 1.277799382716049
+Inner bound: 1.3347499999999992
+Fixed-resolution grid approximation (min) took 61 iterations and 4.724 seconds.
+Expected reachability took 4.725 seconds.
+
+Value in the initial state: 1.277799382716049
+
+Time for model checking: 4.76 seconds.
+
+Result: 1.277799382716049 (value in the initial state)
+

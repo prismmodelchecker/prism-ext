@@ -55,6 +55,7 @@ public class ModulesFile extends ASTElement implements ModelInfo
 	private ArrayList<RewardStruct> rewardStructs; // Rewards structures
 	private List<String> rewardStructNames; // Names of reward structures
 	private Expression initStates; // Initial states specification
+	private List<String> obsVars; // Observable variables
 
 	// Lists of all identifiers used
 	private Vector<String> formulaIdents;
@@ -89,6 +90,7 @@ public class ModulesFile extends ASTElement implements ModelInfo
 		rewardStructs = new ArrayList<RewardStruct>();
 		rewardStructNames = new ArrayList<String>();
 		initStates = null;
+		obsVars = new ArrayList<String>();
 		formulaIdents = new Vector<String>();
 		constantIdents = new Vector<String>();
 		varIdents = new Vector<String>();
@@ -229,6 +231,11 @@ public class ModulesFile extends ASTElement implements ModelInfo
 		initStates = e;
 	}
 
+	public void addObservableVar(String n)
+	{
+		obsVars.add(n);
+	}
+	
 	// Get methods
 
 	public FormulaList getFormulaList()
@@ -478,6 +485,12 @@ public class ModulesFile extends ASTElement implements ModelInfo
 		return initStates;
 	}
 
+	@Override
+	public List<String> getObservableVars()
+	{
+		return obsVars;
+	}
+	
 	/**
 	 * Look up a property by name.
 	 * Returns null if not found.
@@ -598,6 +611,16 @@ public class ModulesFile extends ASTElement implements ModelInfo
 		return false;
 	}
 
+	public boolean isVarObservable(int i)
+	{
+		return obsVars.contains(varNames.get(i));
+	}
+	
+	public boolean isVarObservable(String s)
+	{
+		return obsVars.contains(s);
+	}
+	
 	@Override
 	public boolean containsUnboundedVariables()
 	{
@@ -1235,6 +1258,17 @@ public class ModulesFile extends ASTElement implements ModelInfo
 			tmp += "\n";
 		s += tmp;
 
+		if (modelType == ModelType.POMDP || modelType == ModelType.POPTA) {
+			s += "observables ";
+			n = obsVars.size();
+			for (i = 0; i < n; i++) {
+				if (i > 0)
+					s += ", ";
+				s += obsVars.get(i);
+			}
+			s += " endobservables\n\n";
+		}
+
 		n = getNumGlobals();
 		for (i = 0; i < n; i++) {
 			s += "global " + getGlobal(i) + ";\n";
@@ -1302,6 +1336,9 @@ public class ModulesFile extends ASTElement implements ModelInfo
 		}
 		if (initStates != null)
 			ret.setInitialStates(initStates.deepCopy());
+		for (String ov : obsVars)
+			ret.obsVars.add(ov);
+
 		// Copy other (generated) info
 		ret.formulaIdents = (formulaIdents == null) ? null : (Vector<String>)formulaIdents.clone();
 		ret.constantIdents = (constantIdents == null) ? null : (Vector<String>)constantIdents.clone();

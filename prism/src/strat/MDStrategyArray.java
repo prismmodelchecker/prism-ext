@@ -45,6 +45,7 @@ public class MDStrategyArray extends MDStrategy
 	/**
 	 * Creates an MDStrategyArray from an integer array of choices.
 	 * The array may later be modified/delete - take a copy if you want to keep it.
+	 * choices the array of choice in each state
 	 */
 	public MDStrategyArray(explicit.NondetModel model, int choices[])
 	{

@@ -110,6 +110,12 @@ public class PrismNative
 	{
 		PN_SetMaxIters(i);
 	}
+	
+	private static native void PN_SetGridResolution(int i);
+	public static void setGridResolution(int i)
+	{
+		PN_SetGridResolution(i);
+	}
 
 	private static native void PN_SetSBMaxMem(int i);
 	public static void setSBMaxMem(int i)

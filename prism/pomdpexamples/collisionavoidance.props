@@ -1,0 +1,10 @@
+R{"total_cost"}min=? [ F "terminal" ]
+
+R{"total_cost"}min=? [ F "collision" ]
+
+R{"total_cost"}min=? [ F "nocollision" ]
+
+Pmin=? [ F "collision" ]
+
+Pmax=? [ F "collision" ]
+

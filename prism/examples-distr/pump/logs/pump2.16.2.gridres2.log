@@ -1,0 +1,86 @@
+PRISM
+=====
+
+Version: 4.2.pomdps
+Date: Wed Oct 22 10:43:10 BST 2014
+Hostname: ponza.dcs.gla.ac.uk
+Command line: prism pump.prism pump.props -prop 2 -const 'h0=2,h1=16,N=2' -gridresolution 2
+
+Parsing model file "pump.prism"...
+
+Parsing properties file "pump.props"...
+
+4 properties:
+(1) Pmin=? [ F correct=1 ]
+(2) Pmax=? [ F correct=1 ]
+(3) Rmin=? [ F l=2 ]
+(4) Rmin=? [ F l=2 ]
+
+Type:        POPTA
+Modules:     high pump low 
+Variables:   (bit) p y l m guess correct x 
+
+Switching to explicit engine
+
+---------------------------------------------------------------------
+
+Model checking: Pmax=? [ F correct=1 ]
+Model constants: h0=2,h1=16,N=2
+
+Performing digital clocks translation...
+Computed clock maximums: {y=1, x=10}
+Computed GCD: 1
+
+Model checking: Pmax=? [ F correct=1 ]
+Model constants: h0=2,h1=16,N=2
+
+Building model...
+Model constants: h0=2,h1=16,N=2
+
+Computing reachable states...
+ 243 states
+Reachable states exploration and model construction done in 0.095 secs.
+Sorting reachable states list...
+
+Time for model construction: 0.13 seconds.
+
+Type:        POMDP
+States:        243 (1 initial)
+Transitions:   302
+Choices:       257
+Max/avg:       2/1.06
+Observables:   145
+Unobservables: 3
+
+Starting probabilistic reachability (max)...
+Starting fixed-resolution grid approximation (max)...
+Grid statistics: resolution=2, points=342, unknown points=318
+Building belief space approximation...
+Solving belief space approximation...
+
+Strategy DTMC:
+States:      1134 (1 initial)
+Transitions: 1396
+Choices:     1132
+Max/avg:     1/1.00
+
+Starting probabilistic reachability (min)...
+Starting Prob0 (min)...
+Prob0 (min) took 25 iterations and 0.064 seconds.
+Starting Prob1 (min)...
+Prob1 (min) took 272 iterations and 0.232 seconds.
+target=2, yes=89, no=24, maybe=1021
+Starting value iteration (min)...
+Value iteration (min) took 123 iterations and 0.048 seconds.
+Probabilistic reachability took 0.345 seconds.
+Outer bound: 0.9921937608808166
+Inner bound: 0.93990578201986
+Fixed-resolution grid approximation (max) took 726 iterations and 1.361 seconds.
+Probabilistic reachability took 1.361 seconds.
+
+Value in the initial state: 0.9921937608808166
+
+Time for model checking: 1.364 seconds.
+
+Result: 0.9921937608808166 (value in the initial state)
+

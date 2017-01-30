@@ -6,7 +6,7 @@ if exists("b:current_syntax")
   finish
 endif
 
-syn keyword prismStructureKeyword ctmc dtmc mdp smg module endmodule formula nondeterministic probabilistic pta stochastic invariant endinvariant rewards endrewards init endinit system endsystem player endplayer
+syn keyword prismStructureKeyword ctmc dtmc mdp smg module endmodule formula nondeterministic pomdp probabilistic pta stochastic invariant endinvariant rewards endrewards init endinit system endsystem player endplayer
 syn keyword prismBool true false
 syn keyword prismVariableType bool clock const double global int rate label filter func
 syn keyword prismFunction max min

@@ -1,0 +1,7 @@
+// min max probability gain an advantage
+Pmin=? [ F (r=3 & unfair=1) ] // should be 0
+Pmax=? [ F (r=3 & unfair=1) ] // reduce as K is increased (1/K?)
+// turned into a expected reachability property
+Rmin=? [ F (r=3) ]
+Rmax=? [ F (r=3) ]
+

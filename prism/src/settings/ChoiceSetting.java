@@ -61,6 +61,7 @@ public class ChoiceSetting extends Setting
         boolean valid = false;
         for(int i = 0; i < values.length; i++)
         {
+//        	System.out.println(values[i]);
             if(obj.toString().equals(values[i]))
             {
                 valid = true;

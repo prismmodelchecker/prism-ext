@@ -180,7 +180,7 @@ public class SimulatorEngine extends PrismComponent
 	public void checkModelForSimulation(ModulesFile modulesFile) throws PrismException
 	{
 		// No support for PTAs yet
-		if (modulesFile.getModelType() == ModelType.PTA) {
+		if (modulesFile.getModelType() == ModelType.PTA || modulesFile.getModelType() == ModelType.POPTA) {
 			throw new PrismException("Sorry - the simulator does not currently support PTAs");
 		}
 		// No support for system...endsystem yet

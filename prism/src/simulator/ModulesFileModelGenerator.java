@@ -157,6 +157,12 @@ public class ModulesFileModelGenerator extends DefaultModelGenerator
 	}
 
 	@Override
+	public List<String> getObservableVars()
+	{
+		return modulesFile.getObservableVars();
+	}
+	
+	@Override
 	public int getNumLabels()
 	{
 		return labelList.size();	

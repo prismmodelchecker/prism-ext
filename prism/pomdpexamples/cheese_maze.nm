@@ -1,0 +1,107 @@
+//pomdp of cheese maze
+// cheese.95.POMDP - McCallum's cheese maze
+
+pomdp
+
+// observable variables
+observables 
+	x1
+endobservables
+
+module cheese_maze
+
+	x1 : [0..6]; // observations
+	x2 : [0..4]; // column order (could use actual state)
+
+	// OBSERVATION 0 - only go south or east
+	
+	//[n] x1=0 & x2=0 -> (x1'=x1)&(x2'=0);
+	[s] x1=0 & x2=0 -> (x1'=4)&(x2'=0); 
+	[e] x1=0 & x2=0 -> (x1'=1)&(x2'=1); 
+	//[w] x1=0 & x2=0 -> (x1'=x1)&(x2'=0); 
+
+	// OBSERVATION 1 - only go east or west
+	
+	//[n] x1=1 & x2=1 -> (x1'=1)&(x2'=1); //1
+	//[s] x1=1 & x2=1 -> (x1'=1)&(x2'=1); 
+	[e] x1=1 & x2=1 -> (x1'=2)&(x2'=2); 
+	[w] x1=1 & x2=1 -> (x1'=0)&(x2'=0); 
+
+	//[n] x1=1 & x2=3 -> (x1'=1)&(x2'=3); //2
+	//[s] x1=1 & x2=3 -> (x1'=1)&(x2'=3); 
+	[e] x1=1 & x2=3 -> (x1'=3)&(x2'=4); 
+	[w] x1=1 & x2=3 -> (x1'=2)&(x2'=2); 
+	
+	// OBSERVATION 2 - only go south, east or west
+
+	//[n] x1=2 & x2=2 -> (x1'=2)&(x2'=2); //3
+	[s] x1=2 & x2=2 -> (x1'=4)&(x2'=2); 
+	[e] x1=2 & x2=2 -> (x1'=1)&(x2'=3); 
+	[w] x1=2 & x2=2 -> (x1'=1)&(x2'=1); 
+
+	// OBSERVATION 3 - only go south or west
+
+	//[n] x1=3 & x2=4 -> (x1'=3)&(x2'=4); //4
+	[s] x1=3 & x2=4 -> (x1'=4)&(x2'=4); 
+	//[e] x1=3 & x2=4 -> (x1'=3)&(x2'=4); 
+	[w] x1=3 & x2=4 -> (x1'=1)&(x2'=3); 
+
+	// OBSERVATION 4 - only go north or south
+
+	[n] x1=4 & x2=0 -> (x1'=0)&(x2'=0); //5
+	[s] x1=4 & x2=0 -> (x1'=5)&(x2'=0); 
+	//[e] x1=4 & x2=0 -> (x1'=4)&(x2'=0); 
+	//[w] x1=4 & x2=0 -> (x1'=4)&(x2'=0); 
+
+	[n] x1=4 & x2=2 -> (x1'=2)&(x2'=2); //6
+	[s] x1=4 & x2=2 -> (x1'=6)&(x2'=2); 
+	//[e] x1=4 & x2=2 -> (x1'=4)&(x2'=2); 
+	//[w] x1=4 & x2=2 -> (x1'=4)&(x2'=2); 
+
+	[n] x1=4 & x2=4 -> (x1'=3)&(x2'=4); //7
+	[s] x1=4 & x2=4 -> (x1'=5)&(x2'=4); 
+	//[e] x1=4 & x2=4 -> (x1'=4)&(x2'=4); 
+	//[w] x1=4 & x2=4 -> (x1'=4)&(x2'=4); 
+	
+	// OBSERVATION 5 - only go north
+
+	[n] x1=5 & x2=0 -> (x1'=4)&(x2'=0); //8
+	//[s] x1=5 & x2=0 -> (x1'=5)&(x2'=0); 
+	//[e] x1=5 & x2=0 -> (x1'=5)&(x2'=0); 
+	//[w] x1=5 & x2=0 -> (x1'=5)&(x2'=0); 
+
+	[n] x1=5 & x2=4 -> (x1'=4)&(x2'=4); //9
+	//[s] x1=5 & x2=4 -> (x1'=5)&(x2'=4); 
+	//[e] x1=5 & x2=4 -> (x1'=5)&(x2'=4); 
+	//[w] x1=5 & x2=4 -> (x1'=5)&(x2'=4); 
+
+	// OBSERVATION 6 - only loop 
+
+	[l] x1=6 & x2=2 -> (x1'=6)&(x2'=2); //10 goal
+	//[s] x1=6 & x2=2 -> (x1'=6)&(x2'=2); 
+	//[e] x1=6 & x2=2 -> (x1'=6)&(x2'=2); 
+	//[w] x1=6 & x2=2 -> (x1'=6)&(x2'=2); 
+
+
+endmodule
+
+init
+	//x1=4
+	//&(x2=0| x2=2 | x2=4)
+	
+	x1=1
+	&(x2=1|x2=3)
+endinit
+
+// reward - number of steps
+rewards "total_cost"
+	
+	// transition rewards
+	[n] true : 1; 
+	[s] true : 1; 
+	[e] true : 1; 
+	[w] true : 1; 
+
+endrewards
+
+label "goal" = (x1=6);

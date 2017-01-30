@@ -1,0 +1,9 @@
+// RESULT (h0=2,h1=8,N=4,D=25): 0.00193953
+Pmin=? [ F correct=1 ]
+
+// RESULT (h0=2,h1=8,N=4,D=25): 0.63174
+Pmax=? [ F correct=1 ]
+
+//Rmin=? [ F l=2 ]
+
+//Rmin=? [ F l=2 ]

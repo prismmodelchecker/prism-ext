@@ -33,12 +33,17 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.BitSet;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 
+import common.IterableStateSet;
+import explicit.rewards.MCRewards;
+import explicit.rewards.MDPRewards;
 import prism.PrismException;
-
+import prism.PrismUtils;
 
 /**
  * Simple explicit-state representation of an MDP.
@@ -50,7 +55,7 @@ public class MDPSimple extends MDPExplicit implements NondetModelSimple
 {
 	// Transition function (Steps)
 	protected List<List<Distribution>> trans;
-
+	
 	// Action labels
 	// (null list means no actions; null in element s means no actions for state s)
 	protected List<List<Object>> actions;
@@ -223,6 +228,7 @@ public class MDPSimple extends MDPExplicit implements NondetModelSimple
 		numDistrs = numTransitions = maxNumDistrs = 0;
 		maxNumDistrsOk = true;
 		trans = new ArrayList<List<Distribution>>(numStates);
+		
 		for (int i = 0; i < numStates; i++) {
 			trans.add(new ArrayList<Distribution>());
 		}
@@ -568,7 +574,396 @@ public class MDPSimple extends MDPExplicit implements NondetModelSimple
 		return trans.get(s).get(i).iterator();
 	}
 
-	
+	@Override
+	public void prob0step(BitSet subset, BitSet u, boolean forall, BitSet result)
+	{
+		boolean b1, b2;
+		for (int i : new IterableStateSet(subset, numStates)) {
+			b1 = forall; // there exists or for all
+			for (Distribution distr : trans.get(i)) {
+				b2 = distr.containsOneOf(u);
+				if (forall) {
+					if (!b2) {
+						b1 = false;
+						break;
+					}
+				} else {
+					if (b2) {
+						b1 = true;
+						break;
+					}
+				}
+			}
+			result.set(i, b1);
+		}
+	}
+
+	@Override
+	public void prob1Astep(BitSet subset, BitSet u, BitSet v, BitSet result)
+	{
+		boolean b1;
+		for (int i : new IterableStateSet(subset, numStates)) {
+			b1 = true;
+			for (Distribution distr : trans.get(i)) {
+				if (!(distr.isSubsetOf(u) && distr.containsOneOf(v))) {
+					b1 = false;
+					break;
+				}
+			}
+			result.set(i, b1);
+		}
+	}
+
+	@Override
+	public void prob1Estep(BitSet subset, BitSet u, BitSet v, BitSet result, int strat[])
+	{
+		int j, stratCh = -1;
+		boolean b1;
+		for (int i : new IterableStateSet(subset, numStates)) {
+			j = 0;
+			b1 = false;
+			for (Distribution distr : trans.get(i)) {
+				if (distr.isSubsetOf(u) && distr.containsOneOf(v)) {
+					b1 = true;
+					// If strategy generation is enabled, remember optimal choice
+					if (strat != null)
+						stratCh = j;
+					break;
+				}
+				j++;
+			}
+			// If strategy generation is enabled, store optimal choice
+			// (only if this the first time we add the state to S^yes)
+			if (strat != null & b1 & !result.get(i)) {
+				strat[i] = stratCh;
+			}
+			// Store result
+			result.set(i, b1);
+		}
+	}
+
+	@Override
+	/**
+	 * ignore this, not referenced
+	 */
+	public void prob1step(BitSet subset, BitSet u, BitSet v, boolean forall, BitSet result)
+	{
+		boolean b1, b2;
+		for (int i : new IterableStateSet(subset, numStates)) {
+			b1 = forall; // there exists or for all
+			for (Distribution distr : trans.get(i)) {
+				b2 = distr.containsOneOf(v) && distr.isSubsetOf(u);
+				if (forall) {
+					if (!b2) {
+						b1 = false;
+						break;
+					}
+				} else {
+					if (b2) {
+						b1 = true;
+						break;
+					}
+				}
+			}
+			result.set(i, b1);
+		}
+	}
+
+	@Override
+	public boolean prob1stepSingle(int s, int i, BitSet u, BitSet v)
+	{
+		Distribution distr = trans.get(s).get(i);
+		return distr.containsOneOf(v) && distr.isSubsetOf(u);
+	}
+
+	@Override
+	public double mvMultMinMaxSingle(int s, double vect[], boolean min, int strat[])
+	{
+		int j, k, stratCh = -1;
+		double d, prob, minmax;
+		boolean first;
+		List<Distribution> step;
+
+		j = 0;
+		minmax = 0;
+		first = true;
+		step = trans.get(s);
+		for (Distribution distr : step) {
+			// Compute sum for this distribution
+			d = 0.0;
+			for (Map.Entry<Integer, Double> e : distr) {
+				k = (Integer) e.getKey();
+				prob = (Double) e.getValue();
+				d += prob * vect[k];
+			}
+			// Check whether we have exceeded min/max so far
+			if (first || (min && d < minmax) || (!min && d > minmax)) {
+				minmax = d;
+				// If strategy generation is enabled, remember optimal choice
+				if (strat != null)
+					stratCh = j;
+			}
+			first = false;
+			j++;
+		}
+		// If strategy generation is enabled, store optimal choice
+		if (strat != null & !first) {
+			// For max, only remember strictly better choices
+			if (min) {
+				strat[s] = stratCh;
+			} else if (strat[s] == -1 || minmax > vect[s]) {
+				strat[s] = stratCh;
+			}
+		}
+
+		return minmax;
+	}
+
+	@Override
+	public List<Integer> mvMultMinMaxSingleChoices(int s, double vect[], boolean min, double val)
+	{
+		int j, k;
+		double d, prob;
+		List<Integer> res;
+		List<Distribution> step;
+
+		// Create data structures to store strategy
+		res = new ArrayList<Integer>();
+		// One row of matrix-vector operation 
+		j = -1;
+		step = trans.get(s);
+		for (Distribution distr : step) {
+			j++;
+			// Compute sum for this distribution
+			d = 0.0;
+			for (Map.Entry<Integer, Double> e : distr) {
+				k = (Integer) e.getKey();
+				prob = (Double) e.getValue();
+				d += prob * vect[k];
+			}
+			// Store strategy info if value matches
+			//if (PrismUtils.doublesAreClose(val, d, termCritParam, termCrit == TermCrit.ABSOLUTE)) {
+			if (PrismUtils.doublesAreClose(val, d, 1e-12, false)) {
+				res.add(j);
+				//res.add(distrs.getAction());
+			}
+		}
+
+		return res;
+	}
+
+	@Override
+	public double mvMultSingle(int s, int i, double vect[])
+	{
+		double d, prob;
+		int k;
+
+		Distribution distr = trans.get(s).get(i);
+		// Compute sum for this distribution
+		d = 0.0;
+		for (Map.Entry<Integer, Double> e : distr) {
+			k = (Integer) e.getKey();
+			prob = (Double) e.getValue();
+			d += prob * vect[k];
+		}
+
+		return d;
+	}
+
+	@Override
+	public double mvMultJacMinMaxSingle(int s, double vect[], boolean min, int strat[])
+	{
+		int j, k, stratCh = -1;
+		double diag, d, prob, minmax;
+		boolean first;
+		List<Distribution> step;
+
+		j = 0;
+		minmax = 0;
+		first = true;
+		step = trans.get(s);
+		for (Distribution distr : step) {
+			diag = 1.0;
+			// Compute sum for this distribution
+			d = 0.0;
+			for (Map.Entry<Integer, Double> e : distr) {
+				k = (Integer) e.getKey();
+				prob = (Double) e.getValue();
+				if (k != s) {
+					d += prob * vect[k];
+				} else {
+					diag -= prob;
+				}
+			}
+			if (diag > 0)
+				d /= diag;
+			// Check whether we have exceeded min/max so far
+			if (first || (min && d < minmax) || (!min && d > minmax)) {
+				minmax = d;
+				// If strategy generation is enabled, remember optimal choice
+				if (strat != null) {
+					stratCh = j;
+				}
+			}
+			first = false;
+			j++;
+		}
+		// If strategy generation is enabled, store optimal choice
+		if (strat != null & !first) {
+			// For max, only remember strictly better choices
+			if (min) {
+				strat[s] = stratCh;
+			} else if (strat[s] == -1 || minmax > vect[s]) {
+				strat[s] = stratCh;
+			}
+		}
+
+		return minmax;
+	}
+
+	@Override
+	public double mvMultJacSingle(int s, int i, double vect[])
+	{
+		double diag, d, prob;
+		int k;
+		Distribution distr;
+
+		distr = trans.get(s).get(i);
+		diag = 1.0;
+		// Compute sum for this distribution
+		d = 0.0;
+		for (Map.Entry<Integer, Double> e : distr) {
+			k = (Integer) e.getKey();
+			prob = (Double) e.getValue();
+			if (k != s) {
+				d += prob * vect[k];
+			} else {
+				diag -= prob;
+			}
+		}
+		if (diag > 0)
+			d /= diag;
+
+		return d;
+	}
+
+	@Override
+	public double mvMultRewMinMaxSingle(int s, double vect[], MDPRewards mdpRewards, boolean min, int strat[])
+	{
+		int j, k, stratCh = -1;
+		double d, prob, minmax;
+		boolean first;
+		List<Distribution> step;
+
+		minmax = 0;
+		first = true;
+		j = -1;
+		step = trans.get(s);
+		for (Distribution distr : step) {
+			j++;
+			// Compute sum for this distribution
+			d = mdpRewards.getTransitionReward(s, j);
+			for (Map.Entry<Integer, Double> e : distr) {
+				k = (Integer) e.getKey();
+				prob = (Double) e.getValue();
+				d += prob * vect[k];
+			}
+			// Check whether we have exceeded min/max so far
+			if (first || (min && d < minmax) || (!min && d > minmax)) {
+				minmax = d;
+				// If strategy generation is enabled, remember optimal choice
+				if (strat != null)
+					stratCh = j;
+			}
+			first = false;
+		}
+		// Add state reward (doesn't affect min/max)
+		minmax += mdpRewards.getStateReward(s);
+		// If strategy generation is enabled, store optimal choice
+		if (strat != null & !first) {
+			// For max, only remember strictly better choices
+			if (min) {
+				strat[s] = stratCh;
+			} else if (strat[s] == -1 || minmax > vect[s]) {
+				strat[s] = stratCh;
+			}
+		}
+
+		return minmax;
+	}
+
+	@Override
+	public double mvMultRewMinMaxSingle(int s, double[] vect, HashMap<Integer, Double> vhash, MDPRewards mdpRewards, boolean min, int[] strat)
+	{
+		int j, k, stratCh = -1;
+		double d, prob, minmax;
+		boolean first;
+		List<Distribution> step;
+
+		minmax = 0;
+		first = true;
+		j = -1;
+		step = trans.get(s);
+		for (Distribution distr : step) {
+			j++;
+			// Compute sum for this distribution
+			d = mdpRewards.getTransitionReward(s, j);
+			for (Map.Entry<Integer, Double> e : distr) {
+				k = (Integer) e.getKey();
+				prob = (Double) e.getValue();
+				double valueK;
+				if(vhash.get(k)!=null){
+					valueK=vhash.get(k);
+				}else{
+					valueK=vect[k];
+					vhash.put(k, valueK);
+				}
+				d += prob * valueK;
+			}
+			// Check whether we have exceeded min/max so far
+			if (first || (min && d < minmax) || (!min && d > minmax)) {
+				minmax = d;
+				// If strategy generation is enabled, remember optimal choice
+				if (strat != null)
+					stratCh = j;
+			}
+			first = false;
+		}
+		// Add state reward (doesn't affect min/max)
+		minmax += mdpRewards.getStateReward(s);
+		// If strategy generation is enabled, store optimal choice
+		if (strat != null & !first) {
+			// For max, only remember strictly better choices
+			if (min) {
+				strat[s] = stratCh;
+			} else if (strat[s] == -1 || minmax > vhash.get(s)) {
+				strat[s] = stratCh;
+			}
+		}
+
+		return minmax;
+	}
+
+	@Override
+	public double mvMultRewSingle(int s, int i, double[] vect, MCRewards mcRewards)
+	{
+		double d, prob;
+		int k;
+
+		Distribution distr = trans.get(s).get(i);
+		// Compute sum for this distribution
+		// TODO: use transition rewards when added to DTMCss
+		// d = mcRewards.getTransitionReward(s);
+		d = 0;
+		for (Map.Entry<Integer, Double> e : distr) {
+			k = (Integer) e.getKey();
+			prob = (Double) e.getValue();
+			d += prob * vect[k];
+		}
+		d += mcRewards.getStateReward(s);
+		
+		return d;
+	}
 
 	// Accessors (other)
 
@@ -584,7 +979,7 @@ public class MDPSimple extends MDPExplicit implements NondetModelSimple
 	 * Get the ith choice (distribution) for state s.
 	 */
 	public Distribution getChoice(int s, int i)
-	{
+	{		
 		return trans.get(s).get(i);
 	}
 
@@ -678,5 +1073,7 @@ public class MDPSimple extends MDPExplicit implements NondetModelSimple
 			return false;
 		// TODO: compare actions (complicated: null = null,null,null,...)
 		return true;
-	}
+	}	
+	
+
 }

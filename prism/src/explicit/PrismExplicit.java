@@ -1,8 +1,8 @@
 //==============================================================================
 //	
-//	Copyright (c) 2002-
+//	Copyright (c) 2014-
 //	Authors:
-//	* Dave Parker <david.parker@comlab.ox.ac.uk> (University of Oxford)
+//	* Xueyi Zou <xz972@york.ac.uk> (University of York)
 //	
 //------------------------------------------------------------------------------
 //	
@@ -28,6 +28,9 @@ package explicit;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
 
 import parser.ast.Expression;
 import parser.ast.ModulesFile;
@@ -71,7 +74,7 @@ public class PrismExplicit extends PrismComponent
 		Model modelExpl;
 		ConstructModel constructModel;
 
-		if (modulesFile.getModelType() == ModelType.PTA) {
+		if (modulesFile.getModelType() == ModelType.PTA || modulesFile.getModelType() == ModelType.POPTA) {
 			throw new PrismNotSupportedException("You cannot build a PTA model explicitly, only perform model checking");
 		}
 
@@ -216,6 +219,9 @@ public class PrismExplicit extends PrismComponent
 			break;
 		case MDP:
 			mc = new MDPModelChecker(this);
+			break;
+		case POMDP:
+			mc = new POMDPModelChecker(this);
 			break;
 		case CTMC:
 			mc = new CTMCModelChecker(this);

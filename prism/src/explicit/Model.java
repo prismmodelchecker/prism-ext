@@ -117,11 +117,12 @@ public interface Model
 	/**
 	 * Get access to a list of states (optionally stored).
 	 */
-	public List<State> getStatesList();
+	public List<State> getStatesList();	
 
 	/** Get access to the VarList (optionally stored) */
 	public VarList getVarList();
 
+	
 	/**
 	 * Get access to a list of constant values (optionally stored).
 	 */

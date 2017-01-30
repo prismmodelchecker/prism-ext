@@ -96,6 +96,16 @@ public enum ModelType
 	MDP("Markov decision process") {
 		
 	},
+	POMDP("partially observable Markov decision process") {
+		
+	},
+	POPTA("partially observable probabilistic timed automaton") {
+		@Override
+		public boolean continuousTime()
+		{
+			return true;
+		}
+	},
 	PTA("probabilistic timed automaton") {
 		@Override
 		public boolean continuousTime()

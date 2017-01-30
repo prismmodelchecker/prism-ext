@@ -1,0 +1,85 @@
+pomdp
+
+// assume crypt3 guesses
+
+// can see the agree vars, its own coin and the coin of its left neighbour
+observables
+	m, agree1, agree2, agree3, coin3, coin1, s1, s2, s3, rightGuess, guess3
+endobservables
+
+
+const int p1 =1;
+const int p2 =2;
+const int p3 =3;
+
+module master
+	
+	m : [0..1];
+	pay : [0..3];
+	
+	// decide who pays
+	[decide] m=0 -> 1/2 : (m'=1) & (pay'=1) + 1/2 : (m'=1) & (pay'=2);
+	//[] m=0 -> 1/3 : (m'=1) + 1/3 : (m'=1) & (pay'=1) + 1/3 : (m'=1) & (pay'=2);
+	
+	//[] m=0 -> (m'=1); // master pays
+	//[] m=0 -> (m'=1) & (pay'=1); // crypt 1  pays
+	//[] m=0 -> (m'=1) & (pay'=2); // crypt 2  pays
+	//[] m=0 -> (m'=1) & (pay'=3); // crypt 3  pays
+	
+endmodule
+
+module crypt1
+	
+	coin1     : [0..2];
+	s1        : [0..1];
+	agree1    : [0..1];
+	
+	// flip coin
+	[flip] m=1 & coin1=0 -> 0.5 : (coin1'=1) + 0.5 : (coin1'=2);
+	
+	// make choice (once relevant coins have been flipped
+	// does not pay
+	[reveal] s1=0 & coin1>0 & coin2>0 & coin1=coin2    & (pay!=p1) -> (s1'=1) & (agree1'=1);
+	[reveal] s1=0 & coin1>0 & coin2>0 & !(coin1=coin2) & (pay!=p1) -> (s1'=1);
+	// pays
+	[reveal] s1=0 & coin1>0 & coin2>0 & coin1=coin2    & (pay=p1)  -> (s1'=1);
+	[reveal] s1=0 & coin1>0 & coin2>0 & !(coin1=coin2) & (pay=p1)  -> (s1'=1) & (agree1'=1);
+	// loop when everyone has finished
+	[done] s1=1 -> true;
+
+endmodule
+
+module crypt2 =crypt1[coin1=coin2, s1=s2, agree1=agree2, p1=p2, coin2=coin3] endmodule
+
+//module crypt3 =crypt1[coin1=coin3, s1=s3, agree1=agree3, p1=p3, coin2=coin1] endmodule
+
+module crypt3
+	
+	coin3     : [0..2];
+	s3        : [0..1];
+	agree3    : [0..1];
+	guess3	  : [0..2];
+	rightGuess : [0..2];
+	
+	// flip coin
+	[flip] m=1 & coin3=0 -> 0.5 : (coin3'=1) + 0.5 : (coin3'=2);
+	
+	// make choice (once relevant coins have been flipped
+	// assume does not pay
+	[reveal] s3=0 & coin3>0 & coin1>0 & coin3=coin1 -> (s3'=1) & (agree3'=1);
+	[reveal] s3=0 & coin3>0 & coin1>0 & !(coin3=coin1) -> (s3'=1);
+	// pays
+	//[] s3=0 & coin3>0 & coin1>0 & coin3=coin1    & (pay=p3)  -> (s3'=1);
+	//[] s3=0 & coin3>0 & coin1>0 & !(coin3=coin1) & (pay=p3)  -> (s3'=1) & (agree3'=1);
+	// when everyone has finished guess who paid
+
+	[guess1] s3=1 & guess3=0 -> (guess3'=1);
+	[guess2] s3=1 & guess3=0 -> (guess3'=2);
+	[done] s3=1 & guess3>0 & guess3= pay &rightGuess=0 -> (rightGuess'=1);
+	[done] s3=1 & guess3>0 & !(guess3= pay)&rightGuess=0 -> (rightGuess'=2);
+
+endmodule
+
+rewards
+	[done] (guess3=pay) : 1;
+endrewards

@@ -85,7 +85,7 @@ public class State implements Comparable<State>
 	{
 		int i, j, n;
 		n = v.getNumValues();
-		if (n != modelInfo.getNumVars()) {
+		if (n != modelInfo.getNumVars() && !(this instanceof Observation) && !(this instanceof Unobservation)) {
 			throw new PrismLangException("Wrong number of variables in state");
 		}
 		varValues = new Object[n];

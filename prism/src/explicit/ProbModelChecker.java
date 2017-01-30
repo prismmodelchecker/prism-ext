@@ -69,12 +69,16 @@ public class ProbModelChecker extends NonProbModelChecker
 	protected LinEqMethod linEqMethod = LinEqMethod.GAUSS_SEIDEL;
 	// Method used to solve MDPs
 	protected MDPSolnMethod mdpSolnMethod = MDPSolnMethod.GAUSS_SEIDEL;
+	// Method used to solve POMDPs
+	protected POMDPSolnMethod pomdpSolnMethod = POMDPSolnMethod.FIXED_GRID;
 	// Iterative numerical method termination criteria
 	protected TermCrit termCrit = TermCrit.RELATIVE;
 	// Parameter for iterative numerical method termination criteria
 	protected double termCritParam = 1e-8;
 	// Max iterations for numerical solution
 	protected int maxIters = 100000;
+	// resolution for fixed grid approximation algorithm
+	protected int gridResolution = 10;
 	// Use precomputation algorithms in model checking?
 	protected boolean precomp = true;
 	protected boolean prob0 = true;
@@ -127,7 +131,7 @@ public class ProbModelChecker extends NonProbModelChecker
 
 	// Method used for solving MDPs
 	public enum MDPSolnMethod {
-		VALUE_ITERATION, GAUSS_SEIDEL, POLICY_ITERATION, MODIFIED_POLICY_ITERATION, LINEAR_PROGRAMMING;
+		VALUE_ITERATION, GAUSS_SEIDEL, POLICY_ITERATION, MODIFIED_POLICY_ITERATION, LINEAR_PROGRAMMING, RTDP;
 		public String fullName()
 		{
 			switch (this) {
@@ -141,6 +145,24 @@ public class ProbModelChecker extends NonProbModelChecker
 				return "Modified policy iteration";
 			case LINEAR_PROGRAMMING:
 				return "Linear programming";
+			case RTDP:
+				return "Real time dynamic programming";
+			default:
+				return this.toString();
+			}
+		}
+	};
+	
+	// Method used for solving POMDPs
+	public enum POMDPSolnMethod {
+		RTDP_BEL, FIXED_GRID;
+		public String fullName()
+		{
+			switch (this) {				
+			case RTDP_BEL:
+				return "Real time dynamic programming (Belief)";
+			case FIXED_GRID:
+				return "Fixed-resolution Grid Approximation";	
 			default:
 				return this.toString();
 			}
@@ -193,6 +215,7 @@ public class ProbModelChecker extends NonProbModelChecker
 			}
 			// PRISM_MDP_SOLN_METHOD
 			s = settings.getString(PrismSettings.PRISM_MDP_SOLN_METHOD);
+//			System.out.println(s);
 			if (s.equals("Value iteration")) {
 				setMDPSolnMethod(MDPSolnMethod.VALUE_ITERATION);
 			} else if (s.equals("Gauss-Seidel")) {
@@ -203,8 +226,20 @@ public class ProbModelChecker extends NonProbModelChecker
 				setMDPSolnMethod(MDPSolnMethod.MODIFIED_POLICY_ITERATION);
 			} else if (s.equals("Linear programming")) {
 				setMDPSolnMethod(MDPSolnMethod.LINEAR_PROGRAMMING);
-			} else {
+			} else if (s.equals("Real time dynamic programming")) {
+				setMDPSolnMethod(MDPSolnMethod.RTDP);
+			}else {
 				throw new PrismNotSupportedException("Explicit engine does not support MDP solution method \"" + s + "\"");
+			}
+			// PRISM_POMDP_SOLN_METHOD
+			s = settings.getString(PrismSettings.PRISM_POMDP_SOLN_METHOD);
+//			System.out.println(s);
+			if (s.equals("Real time dynamic programming (Belief)")) {
+				setPOMDPSolnMethod(POMDPSolnMethod.RTDP_BEL);
+			} else if (s.equals("Fixed-resolution Grid Approximation")) {
+				setPOMDPSolnMethod(POMDPSolnMethod.FIXED_GRID);
+			} else {
+				throw new PrismException("Explicit engine does not support POMDP solution method \"" + s + "\"");
 			}
 			// PRISM_TERM_CRIT
 			s = settings.getString(PrismSettings.PRISM_TERM_CRIT);
@@ -219,6 +254,8 @@ public class ProbModelChecker extends NonProbModelChecker
 			setTermCritParam(settings.getDouble(PrismSettings.PRISM_TERM_CRIT_PARAM));
 			// PRISM_MAX_ITERS
 			setMaxIters(settings.getInteger(PrismSettings.PRISM_MAX_ITERS));
+			// PRISM_GRID_RESOLUTION
+			setGridResolution(settings.getInteger(PrismSettings.PRISM_GRID_RESOLUTION));
 			// PRISM_PRECOMPUTATION
 			setPrecomp(settings.getBoolean(PrismSettings.PRISM_PRECOMPUTATION));
 			// PRISM_PROB0
@@ -256,6 +293,7 @@ public class ProbModelChecker extends NonProbModelChecker
 		setTermCrit(other.getTermCrit());
 		setTermCritParam(other.getTermCritParam());
 		setMaxIters(other.getMaxIters());
+		setGridResolution(other.getGridResolution());
 		setPrecomp(other.getPrecomp());
 		setProb0(other.getProb0());
 		setProb1(other.getProb1());
@@ -275,6 +313,7 @@ public class ProbModelChecker extends NonProbModelChecker
 		mainLog.print("termCrit = " + termCrit + " ");
 		mainLog.print("termCritParam = " + termCritParam + " ");
 		mainLog.print("maxIters = " + maxIters + " ");
+		mainLog.print("gridResolution = " + gridResolution + " ");
 		mainLog.print("precomp = " + precomp + " ");
 		mainLog.print("prob0 = " + prob0 + " ");
 		mainLog.print("prob1 = " + prob1 + " ");
@@ -320,6 +359,14 @@ public class ProbModelChecker extends NonProbModelChecker
 	{
 		this.mdpSolnMethod = mdpSolnMethod;
 	}
+	
+	/**
+	 * Set method used to solve MDPs.
+	 */
+	public void setPOMDPSolnMethod(POMDPSolnMethod pomdpSolnMethod)
+	{
+		this.pomdpSolnMethod = pomdpSolnMethod;
+	}
 
 	/**
 	 * Set termination criteria type for numerical iterative methods.
@@ -343,6 +390,14 @@ public class ProbModelChecker extends NonProbModelChecker
 	public void setMaxIters(int maxIters)
 	{
 		this.maxIters = maxIters;
+	}
+	
+	/**
+	 * Set maximum number of iterations for numerical iterative methods.
+	 */
+	public void setGridResolution(int gridResolution)
+	{
+		this.gridResolution = gridResolution;
 	}
 
 	/**
@@ -441,6 +496,11 @@ public class ProbModelChecker extends NonProbModelChecker
 	public int getMaxIters()
 	{
 		return maxIters;
+	}
+	
+	public int getGridResolution()
+	{
+		return gridResolution;
 	}
 
 	public boolean getPrecomp()
@@ -830,6 +890,9 @@ public class ProbModelChecker extends NonProbModelChecker
 		case MDP:
 			res = ((MDPModelChecker) this).computeUntilProbs((MDP) model, remain, target, minMax.isMin());
 			break;
+		case POMDP:
+			res = ((POMDPModelChecker) this).computeReachProbs((POMDP) model, target, minMax.isMin());
+			break;
 		case STPG:
 			res = ((STPGModelChecker) this).computeUntilProbs((STPG) model, remain, target, minMax.isMin1(), minMax.isMin2());
 			break;
@@ -955,6 +1018,7 @@ public class ProbModelChecker extends NonProbModelChecker
 			rewards = constructRewards.buildMCRewardStructure((DTMC) model, rewStruct, constantValues);
 			break;
 		case MDP:
+		case POMDP:
 			rewards = constructRewards.buildMDPRewardStructure((MDP) model, rewStruct, constantValues);
 			break;
 		default:
@@ -1146,6 +1210,9 @@ public class ProbModelChecker extends NonProbModelChecker
 			break;
 		case MDP:
 			res = ((MDPModelChecker) this).computeReachRewards((MDP) model, (MDPRewards) modelRewards, target, minMax.isMin());
+			break;
+		case POMDP:
+			res = ((POMDPModelChecker) this).computeReachRewards((POMDP) model, (MDPRewards) modelRewards, target, minMax.isMin());
 			break;
 		case STPG:
 			res = ((STPGModelChecker) this).computeReachRewards((STPG) model, (STPGRewards) modelRewards, target, minMax.isMin1(), minMax.isMin2());

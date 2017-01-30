@@ -208,6 +208,7 @@ public interface Prism3To4Constants {
     "\"Pmax\"",
     "\"Pmin\"",
     "\"P\"",
+    "\"pomdp\"",
     "\"probabilistic\"",
     "\"prob\"",
     "\"rate\"",

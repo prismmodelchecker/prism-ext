@@ -1,0 +1,83 @@
+PRISM
+=====
+
+Version: 4.2.pomdps
+Date: Wed Oct 22 11:01:56 BST 2014
+Hostname: ponza.dcs.gla.ac.uk
+Command line: prism repudiation_complex.prism repudiation.props -const K=4 -gridresolution 12
+
+Parsing model file "repudiation_complex.prism"...
+
+Parsing properties file "repudiation.props"...
+
+1 property:
+(1) Pmax=? [ F "unfair" ]
+
+Type:        POPTA
+Modules:     originator malicious_recipient 
+Variables:   o (N) ack x r mess last y 
+
+Switching to explicit engine
+
+---------------------------------------------------------------------
+
+Model checking: Pmax=? [ F "unfair" ]
+Model constants: K=4
+
+Performing digital clocks translation...
+Computed clock maximums: {y=5, x=4}
+Computed GCD: 1
+
+Model checking: Pmax=? [ F "unfair" ]
+Model constants: K=4
+
+Building model...
+Model constants: K=4
+
+Computing reachable states...
+ 1501 states
+Reachable states exploration and model construction done in 0.191 secs.
+Sorting reachable states list...
+
+Time for model construction: 0.267 seconds.
+
+Type:        POMDP
+States:        1501 (1 initial)
+Transitions:   2594
+Choices:       2421
+Max/avg:       4/1.61
+Observables:   718
+Unobservables: 5
+
+Starting probabilistic reachability (max)...
+Starting fixed-resolution grid approximation (max)...
+Grid statistics: resolution=12, points=72748, unknown points=72628
+Building belief space approximation...
+Solving belief space approximation...
+
+Strategy DTMC:
+States:      66 (1 initial)
+Transitions: 71
+Choices:     62
+Max/avg:     1/0.94
+
+Starting probabilistic reachability (min)...
+Starting Prob0 (min)...
+Prob0 (min) took 13 iterations and 0.001 seconds.
+Starting Prob1 (min)...
+Prob1 (min) took 65 iterations and 0.005 seconds.
+target=4, yes=17, no=18, maybe=31
+Starting value iteration (min)...
+Value iteration (min) took 28 iterations and 0.001 seconds.
+Probabilistic reachability took 0.007 seconds.
+Outer bound: 0.4375
+Inner bound: 0.4375
+Fixed-resolution grid approximation (max) took 39 iterations and 12.178 seconds.
+Probabilistic reachability took 12.178 seconds.
+
+Value in the initial state: 0.4375
+
+Time for model checking: 12.181 seconds.
+
+Result: 0.4375 (value in the initial state)
+

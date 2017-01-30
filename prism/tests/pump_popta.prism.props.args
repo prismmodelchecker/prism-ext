@@ -1,0 +1,1 @@
+-ptamethod digital -ex -gridresolution 2 -const h0=2,h1=16,N=2:5

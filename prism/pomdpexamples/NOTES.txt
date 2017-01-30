@@ -1,0 +1,168 @@
+----------------------------------------------------
+Dining Crypt
+
+two versions of this model (property file the same)
+
+crypt3.prism       
+crypt3_sync.prism  
+crypt3.props
+
+In the sync version all processes move in lock step which reduces the state space
+
+min and max probability that one of the cryptographers can guess which of the others paid 
+(the protocol ensure the cryptographers know whether the master or one of them paid, but not which cryptographer actually paid)
+
+both of these reachability probabilities should be 0.5
+
+in the model there is a uniform choice as to which cryptographer pays out of those that are not going to guess
+
+also reformulated probabilistic reachability as expected reachability property
+
+prism-pomdp crypt3_sync.prism -ex -v -fixed_grid crypt3.props -prop 1 
+result(resolution-result): 4-0.5 5-0.36 6-0.33 8-0.5 10-0.4
+
+prism-pomdp crypt3_sync.prism -ex -v -fixed_grid crypt3.props -prop 2 
+result: 4-0.5 5-0.64 6-0.67 8-0.5 10-0.6
+
+prism-pomdp crypt3_sync.prism -ex -v -fixed_grid crypt3.props -prop 3 
+result: 4-0.5 5-0.36 6-0.33 8-0.5 10-0.4 
+ 
+ 
+prism-pomdp crypt3_sync.prism -ex -v -fixed_grid crypt3.props -prop 4 
+result: 10-0.6 12-0.5 15-0.55 20-0.5 30-0.53
+
+Look at how the gridresolution parameter influences the results.
+
+extension: more cryptographers and change the initial distribution over who pays
+----------------------------------------------------
+Repudiation
+
+repudiation.prism
+repudiation.props
+
+we can now do this properly with the value of N being computed at the start and the recipient choosing when to end the transmission
+
+parameter: K - the number of messages N is uniformly chosen between 0 and K
+
+model allows any value of K between 1 and 20 to be specified
+
+properties: minimum and maximum probability the recipient gains an advantage 
+
+minimum probability is 0 - recipient behaves in a correct way
+maximum probability is 1/K
+
+have also converted the probabilistic reachability into expected reachability properties
+
+prism-pomdp repudiation.prism repudiation.props -ex -v -fixed_grid -prop 1 -const K=1:1:20 -gridresolution 5
+result: 0
+
+prism-pomdp repudiation.prism repudiation.props -ex -v -fixed_grid -prop 2 -const K=1:1:7 -gridresolution 5
+result: 1.0 0.6 0.427 0.4079999920000001 0.3263999936000001 0.32639999360000005 0.32639999360000005 
+
+prism-pomdp repudiation.prism repudiation.props -ex -v -fixed_grid -prop 2 -const K=1:1:7 -gridresolution 10
+result: 1.0 0.5 0.4 0.31 0.248 0.254 0.25
+
+prism-pomdp repudiation.prism repudiation.props -ex -v -fixed_grid -prop 2 -const K=1:1:7 -gridresolution 20
+result: 1.0 0.5 0.35 0.26 0.21 
+
+prism-pomdp repudiation.prism repudiation.props -ex -v -fixed_grid -prop 4 -const K=1:1:7 -gridresolution 10
+result: 1.0 0.5 0.4 0.31 0.248 0.254 0.25
+
+Look into how the gridresolution parameter influences the accuracy of the results
+
+extensions: can also consider a model where we look at the possibility the originator gains an advantage
+
+----------------------------------------------------
+Crowds - this is based on Kostas' model which can be automatically generated for any network size
+
+crowds.prism
+crowds.props
+
+minimum and maximum probability the attacker guesses who the original sender is
+
+Problem here is number of unobservable states leads to a very large number of grid points and memory errors. For a grid resolution of 4 we have:
+
+Number of grid points: 234704 
+Number of unknown grid points: 233210
+
+For a gridresolution of 3 it does appear to give feasible results:
+
+prism-pomdp crowds.prism -ex -v -fixed_grid crowds.props -prop 1 -gridresolution 3
+result: 0.24999829668212864
+
+prism-pomdp crowds.prism -ex -v -fixed_grid crowds.props -prop 2 -gridresolution 3
+result: 0.49999922392579477
+
+extensions: can vary the probability of forwarding to see how this changes the chance the attacker can guess correctly
+
+----------------------------------------------------
+Crowds (path reformulation)
+
+Based on the prism model in:
+
+M.T. Adithia
+Probabilistic Analysis of Network Anonymity using PRISM
+
+again probability that the attacker can guess the sender is 
+
+crowds_path3.prism
+crowds_path4.prism
+crowds_path5.prism
+crowds_path.props
+
+3/4/5 is the number of nodes in the network
+
+As for other crowds model the problem is the size of the grid (number of unobservable states). Does seem to work for small values of the gridresolution parameter and a network of size 3 when there are no path reformulations.
+
+prism-pomdp crowds_path3.prism crowds_path.props -ex -v -fixed_grid -prop 1 -const TotalAns=1 -gridresolution 3
+result:0.277661831978881
+
+prism-pomdp crowds_path3.prism crowds_path.props -ex -v -fixed_grid -prop 2 -const TotalAns=1 -gridresolution 3
+result:0.4446652358848945
+
+prism-pomdp crowds_path3.prism crowds_path.props -ex -v -fixed_grid -prop 3 -const TotalAns=1 -gridresolution 3
+result:0.277661831978881
+
+prism-pomdp crowds_path3.prism crowds_path.props -ex -v -fixed_grid -prop 4 -const TotalAns=1 -gridresolution 3
+result:0.4446652358848945
+
+----------------------------------------------------
+to do....
+
+working on gradual commitment model
+
+gcp.prism
+gcp.props
+
+not sure this can show anything useful as interesting properties require the originator and recipient to collaborate
+
+AFS1 - worst case probability that one client gets k services more that the other
+
+Oblivious transfer protocol - guess what was sent
+
+light bulb and n prisoners 
+
+ASW Protocol and other contract signing protocols (GCP)?
+
+Kaminsky DNS cache-poisoning attack?
+
+Onion routing
+
+handwashing model (oxford masters project)
+
+search POMDP examples
+
+Quantum?
+
+
+----------------------------------------------------
+
+This is the specification for the AFS1 protocol:
+
+We used our algorithm to analyse a simple protocol for anonymous fair service. A server must serve two clients in a fair fashion regardless of the rates at which they ask for service. In addition, the clients cannot be identified, so the server cannot simply count how many times it has served each of the clients. A rough sketch of the protocol is the following: the server keeps track of the order in which requests were received. At most two requests may be pending, since we assume that clients cannot perform requests while waiting 3. So, once two requests were received, a coin is tossed in order to decide which of the requests is replied: in case the coin lands heads, the first request is replied. Otherwise, the server replies the second request. Then, the coin is tossed again.
+
+Different results may be obtained by changing what the server does in case a client is waiting while the other one is being served. In this case, the server may serve the client that is waiting (instead of tossing the coin again) once the service for the current one has finished. By avoiding the coin toss, the server increases its throughput, but our analysis shows that the fairness of the service may result affected. For brevity, we name the protocol that tosses a new coin as AFS1, and the protocol that serves the waiting process as AFS2 .
+
+Specification for the lightbulb and prisoners
+
+There are 100 prisoners in solitary cells. There's a central living room with one light bulb; this bulb is initially off. No prisoner can see the light bulb from his or her own cell. Everyday, the warden picks a prisoner equally at random, and that prisoner visits the living room. While there, the prisoner can toggle the bulb if he or she wishes. Also, the prisoner has the option of asserting that all 100 prisoners have been to the living room by now. If this assertion is false, all 100 prisoners are shot. However, if it is indeed true, all prisoners are set free and inducted into MENSA, since the world could always use more smart people. Thus, the assertion should only be made if the prisoner is 100% certain of its validity. The prisoners are allowed to get together one night in the courtyard, to discuss a plan. What plan should they agree on, so that eventually, someone will make a correct assertion?

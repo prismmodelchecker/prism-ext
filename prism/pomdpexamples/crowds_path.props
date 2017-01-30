@@ -1,0 +1,5 @@
+Pmin=?[F correct=1]
+Pmax=?[F correct=1]
+// reformulated as reward props
+Rmin=?[F done]
+Rmax=?[F done]

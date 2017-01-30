@@ -1,0 +1,46 @@
+pomdp
+
+// included ack in the observables as recipient will know this as they send the acks
+observables
+	unfair, r, mess, ack, o, x, y
+endobservables
+
+label "unfair" = unfair=1;
+label "invariants" = (o=0=>true)&(o=1=>x*5<=0)&(o=2=>x*5<=AD)&(o=3=>true)&(o=4=>true)&(r=0=>y*5<=0)&(r=1=>true)&(r=2=>true)&(r=3=>true)&(r=4=>y*5<=0);
+
+const int K = 4;
+const int ad = 1;
+const int AD = 5;
+
+module originator
+
+	o : [0..4];
+	N : [0..K];
+	ack : [0..K];
+	unfair : [0..1];
+	x : [0..2];
+
+	[req] o=0&K=4 -> 1/K : (o'=1) & (N'=1) & (x'=0) + 1/K : (o'=1) & (N'=2) & (x'=0) + 1/K : (o'=1) & (N'=3) & (x'=0) + 1/K : (o'=1) & (N'=4) & (x'=0);
+	[message] o=1&x*5<=0 -> (o'=2);
+	[ack] o=2&ack<N-1&x*5<=AD -> (o'=1) & (ack'=min(ack+1, K)) & (x'=0);
+	[ack] o=2&ack=N-1&x*5<=AD -> (o'=3) & (ack'=min(ack+1, K)) & (x'=0);
+	[] o=2&x*5>=AD -> (o'=4) & (x'=0);
+	[decode] ack<N&mess=N -> (unfair'=1) & (o'=3);
+	[decode] !(ack<N&mess=N) -> (o'=3);
+	[time] (o=0=>true)&(o=1=>x*5+1<=0)&(o=2=>x*5+1<=AD)&(o=3=>true)&(o=4=>true) -> 1.0 : (x'=min(x+1, 2));
+
+endmodule
+
+module malicious_recipient
+
+	r : [0..4];
+	mess : [0..K];
+	y : [0..1];
+
+	[req] r=0&y*5=0 -> (r'=1);
+	[message] r=1 -> (r'=2) & (y'=0) & (mess'=min(mess+1, K));
+	[ack] r=2 -> (r'=1);
+	[decode] r=2 -> (r'=3) & (y'=0);
+	[time] (r=0=>y*5+1<=0)&(r=1=>true)&(r=2=>true)&(r=3=>true)&(r=4=>y*5+1<=0) -> 1.0 : (y'=min(y+1, 1));
+
+endmodule

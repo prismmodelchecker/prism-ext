@@ -192,6 +192,9 @@ public class StateModelChecker extends PrismComponent
 		case STPG:
 			mc = new STPGModelChecker(parent);
 			break;
+		case POMDP:
+			mc = new POMDPModelChecker(parent);
+			break;
 		default:
 			throw new PrismException("Cannot create model checker for model type " + modelType);
 		}

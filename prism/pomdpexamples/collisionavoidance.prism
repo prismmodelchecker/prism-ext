@@ -1,0 +1,88 @@
+//pomdp of uav collision avoidance
+
+pomdp
+
+const int xmax; // the max x of the model
+const int ymax; // the max y of the model
+
+// observable variables
+observables 
+	yo,xi,yi
+endobservables
+
+
+module yoEvolution
+
+	yo : [-ymax..ymax];// the y of own-ship
+
+	[up] xi>=0 -> 0.8: (yo'=min(yo+1, ymax)) + 0.2: (yo'=yo);
+	[level] xi>=0 -> 0.8: (yo'=yo) + 0.1: (yo'=min(yo+1, ymax)) + 0.1: (yo'=max(yo-1,-ymax)) ;
+	[down] xi>=0 -> 0.8: (yo'=max(yo-1,-ymax)) + 0.2: (yo'=yo);
+
+
+endmodule
+
+module xiEvolution
+
+	xi : [-1..xmax];// the x of intruder
+	
+	[up] true -> 1.0: (xi'=max(xi-1,-1));
+	[level] true -> 1.0: (xi'=max(xi-1,-1));
+	[down] true -> 1.0: (xi'=max(xi-1,-1));
+endmodule
+
+
+module yiEvolution
+	
+	yi : [-ymax..ymax];//the y of intruder
+
+	[up] xi>=0 & in=1 -> 0.8: (yi'= min(yi+1, ymax))+ 0.2: (yi'=yi);
+	[level] xi>=0 & in=1 -> 0.8: (yi'= min(yi+1, ymax))+ 0.2: (yi'=yi);
+	[down] xi>=0 & in=1 -> 0.8: (yi'= min(yi+1, ymax))+ 0.2: (yi'=yi);
+
+	[up] xi>=0 & in=0 -> 0.8: (yi'=yi) + 0.1: (yi'= min(yi+1, ymax)) + 0.1: (yi'=max(yi-1, -ymax)) ;
+	[level] xi>=0 & in=0 -> 0.8: (yi'=yi) + 0.1: (yi'= min(yi+1, ymax)) + 0.1: (yi'=max(yi-1, -ymax));
+	[down] xi>=0 & in=0 -> 0.8: (yi'=yi) + 0.1: (yi'= min(yi+1, ymax)) + 0.1: (yi'=max(yi-1, -ymax));
+	
+	[up] xi>=0 & in=-1 -> 0.8: (yi'= max(yi-1, -ymax))+ 0.2: (yi'=yi);
+	[level] xi>=0 & in=-1 -> 0.8: (yi'= max(yi-1, -ymax))+ 0.2: (yi'=yi);
+	[down] xi>=0 & in=-1 -> 0.8: (yi'= max(yi-1, -ymax))+ 0.2: (yi'=yi);
+
+endmodule
+
+module inEvolution
+
+	in : [-1..1]; // the intent of intruder
+
+	[up] yi>-ymax & yi<ymax & xi>=0 -> 0.5: (in'=0) + 0.25: (in'=1)  + 0.25: (in'=-1);
+	[level] yi>-ymax & yi<ymax & xi>=0 -> 0.5: (in'=0) + 0.25: (in'=1)  + 0.25: (in'=-1);
+	[down] yi>-ymax & yi<ymax & xi>=0 -> 0.5: (in'=0) + 0.25: (in'=1)  + 0.25: (in'=-1);
+
+	[up] yi=ymax & xi>=0 -> 0.5: (in'=0) + 0.5: (in'=-1);
+	[level] yi=ymax & xi>=0 -> 0.5: (in'=0) + 0.5: (in'=-1);
+	[down] yi=ymax & xi>=0 -> 0.5: (in'=0) + 0.5: (in'=-1);
+
+	[up] yi=-ymax & xi>=0 -> 0.5: (in'=0) + 0.5: (in'=1);
+	[level] yi=-ymax & xi>=0 -> 0.5: (in'=0) + 0.5: (in'=1);
+	[down] yi=-ymax & xi>=0 -> 0.5: (in'=0) + 0.5: (in'=1);
+endmodule
+
+init	
+	yo=0 & xi=xmax & yi=0
+	&(in=-1|in=0 |in=1)
+endinit
+
+rewards "total_cost"
+	
+	// transition costs
+	[up] xi>=0 : 1; 
+	//[level] xi>=0 : 1; 
+	[down] xi>=0 : 1; 
+	
+	// state cost
+	xi=0 & yi=yo : 10;// a collision happens
+endrewards
+
+label "terminal" = (xi=-1);
+label "collision" = (xi=0 & yi=yo);
+label "nocollision" = (xi=0 & yi!=yo);

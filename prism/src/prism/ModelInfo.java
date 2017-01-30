@@ -96,6 +96,11 @@ public interface ModelInfo
 	//public Type getVarType(int i) throws PrismException;
 
 	/**
+	 * Get a list of the names of variables that have been declared to be observable (for POMDPs, etc.)
+	 */
+	public List<String> getObservableVars();
+	
+	/**
 	 * Get the number of labels (atomic propositions) defined for the model. 
 	 */
 	public int getNumLabels();

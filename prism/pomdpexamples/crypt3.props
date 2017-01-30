@@ -1,0 +1,10 @@
+// min max probability guess correctly which crypt paid
+Pmin=? [ F (rightGuess=1) ]
+Pmax=? [ F (rightGuess=1) ]
+// turned into a expected reachability property
+Rmin=? [ F (rightGuess=1)|(rightGuess=2) ]
+Rmax=? [ F (rightGuess=1)|(rightGuess=2) ]
+//wrong guess
+Pmin=? [ F (rightGuess=2) ]
+Pmax=? [ F (rightGuess=2) ]
+

@@ -28,8 +28,11 @@ package explicit;
 
 import java.util.ArrayList;
 import java.util.BitSet;
+import java.util.HashMap;
+import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.PrimitiveIterator;
 import java.util.PrimitiveIterator.OfInt;
@@ -484,6 +487,31 @@ public interface MDP extends MDPGeneric<Double>
 	 * @param vect Vector to multiply by
 	 * @param mdpRewards The rewards (MDP rewards)
 	 */
+	public default double mvMultRewSingle(int s, int i, double vect[], HashMap<Integer, Double> vhash, MDPRewards mdpRewards)
+	{
+		double d = mdpRewards.getStateReward(s);
+		d += mdpRewards.getTransitionReward(s, i);
+		d += sumOverTransitions(s, i, (__, t, prob) -> {
+			double valueK;
+			if (vhash.get(t) != null) {
+				valueK = vhash.get(t);
+			} else {
+				valueK = vect[t];
+				vhash.put(t, valueK);
+			}
+			return prob * vect[t];
+		});
+		return d;
+	}
+	
+	/**
+	 * Do a single row of matrix-vector multiplication and sum of rewards for a specific choice.
+	 * i.e. rew(s) + rew_i(s) + sum_j P_i(s,j)*vect[j]
+	 * @param s State (row) index
+	 * @param i Choice index
+	 * @param vect Vector to multiply by
+	 * @param mdpRewards The rewards (MDP rewards)
+	 */
 	public default double mvMultRewSingle(int s, int i, double vect[], MDPRewards mdpRewards)
 	{
 		double d = mdpRewards.getStateReward(s);
@@ -492,6 +520,47 @@ public interface MDP extends MDPGeneric<Double>
 			return prob * vect[t];
 		});
 		return d;
+	}
+	
+	/**
+	 * Do a single row of matrix-vector multiplication and sum of rewards followed by min/max.
+	 * i.e. return min/max_k { rew(s) + rew_k(s) + sum_j P_k(s,j)*vect[j] }
+	 * Optionally, store optimal (memoryless) strategy info. 
+	 * @param s Row index
+	 * @param vect Vector to multiply by
+	 * @param vhash 
+	 * @param mdpRewards The rewards
+	 * @param min Min or max for (true=min, false=max)
+	 * @param strat Storage for (memoryless) strategy choice indices (ignored if null)
+	 */
+	public default double mvMultRewMinMaxSingle(int s, double vect[], HashMap<Integer, Double> vhash, MDPRewards mdpRewards, boolean min, int strat[])
+	{
+		int stratCh = -1;
+		double minmax = 0;
+		boolean first = true;
+
+		for (int choice = 0, numChoices = getNumChoices(s); choice < numChoices; choice++) {
+			double d = mvMultRewSingle(s, choice, vect, vhash, mdpRewards);
+			// Check whether we have exceeded min/max so far
+			if (first || (min && d < minmax) || (!min && d > minmax)) {
+				minmax = d;
+				// If strategy generation is enabled, remember optimal choice
+				if (strat != null)
+					stratCh = choice;
+			}
+			first = false;
+		}
+		// If strategy generation is enabled, store optimal choice
+		if (strat != null && !first) {
+			// For max, only remember strictly better choices
+			if (min) {
+				strat[s] = stratCh;
+			} else if (strat[s] == -1 || minmax > vect[s]) {
+				strat[s] = stratCh;
+			}
+		}
+
+		return minmax;
 	}
 
 	/**

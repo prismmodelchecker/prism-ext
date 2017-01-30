@@ -1,0 +1,7 @@
+// minimum and maximum probability low guess correctly (security)
+Pmin=?[F correct=1]
+Pmax=?[F correct=1]
+
+// minimum/maximum expected time to send messages (performance)
+Rmin=?[F l=2]
+Rmin=?[F l=2]
