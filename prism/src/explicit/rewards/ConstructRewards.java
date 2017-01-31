@@ -217,6 +217,7 @@ public class ConstructRewards
 		case CTMC:
 			return buildMCRewardStructure((DTMC) model, modelGen, r);
 		case MDP:
+		case POMDP:
 			return buildMDPRewardStructure((MDP) model, modelGen, r);
 		default:
 			throw new PrismNotSupportedException("Cannot build rewards for " + model.getModelType() + "s");
