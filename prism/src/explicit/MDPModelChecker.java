@@ -841,6 +841,7 @@ public class MDPModelChecker extends ProbModelChecker
 		ExportIterations iterationsExport = null;
 		if (settings.getBoolean(PrismSettings.PRISM_EXPORT_ITERATIONS)) {
 			iterationsExport = new ExportIterations("Explicit MDP ReachProbs value iteration (" + description + ")");
+			mainLog.println("Exporting iterations to " + iterationsExport.getFileName());
 		}
 
 		// Store num states
@@ -930,6 +931,7 @@ public class MDPModelChecker extends ProbModelChecker
 		ExportIterations iterationsExport = null;
 		if (settings.getBoolean(PrismSettings.PRISM_EXPORT_ITERATIONS)) {
 			iterationsExport = new ExportIterations("Explicit MDP ReachProbs interval iteration (" + description + ")");
+			mainLog.println("Exporting iterations to " + iterationsExport.getFileName());
 		}
 
 		// Store num states
@@ -2309,6 +2311,7 @@ public class MDPModelChecker extends ProbModelChecker
 		ExportIterations iterationsExport = null;
 		if (settings.getBoolean(PrismSettings.PRISM_EXPORT_ITERATIONS)) {
 			iterationsExport = new ExportIterations("Explicit MDP ReachRewards value iteration (" + description +")");
+			mainLog.println("Exporting iterations to " + iterationsExport.getFileName());
 		}
 
 		// Store num states
@@ -2454,6 +2457,7 @@ public class MDPModelChecker extends ProbModelChecker
 		ExportIterations iterationsExport = null;
 		if (settings.getBoolean(PrismSettings.PRISM_EXPORT_ITERATIONS)) {
 			iterationsExport = new ExportIterations("Explicit MDP ReachRewards interval iteration (" + description + ")");
+			mainLog.println("Exporting iterations to " + iterationsExport.getFileName());
 		}
 
 		// Create initial solution vector(s)
