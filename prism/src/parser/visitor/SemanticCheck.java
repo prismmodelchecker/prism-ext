@@ -44,7 +44,7 @@ public class SemanticCheck extends ASTTraverse
 	private PropertiesFile propertiesFile;
 	// Sometimes we need to keep track of parent (ancestor) objects
 	private ModulesFile inModulesFile = null;
-	private Module inModule = null;
+	private parser.ast.Module inModule = null;
 	private Expression inInvariant = null;
 	private Expression inGuard = null;
 	private Update inUpdate = null;
@@ -84,7 +84,7 @@ public class SemanticCheck extends ASTTraverse
 	public void visitPost(ModulesFile e) throws PrismLangException
 	{
 		int i, j, n, n2;
-		Module m;
+		parser.ast.Module m;
 		Vector<String> v;
 
 		// Register the fact we are leaving a model
@@ -207,13 +207,13 @@ public class SemanticCheck extends ASTTraverse
 		}
 	}
 
-	public void visitPre(Module e) throws PrismLangException
+	public void visitPre(parser.ast.Module e) throws PrismLangException
 	{
 		// Register the fact we are entering a module
 		inModule = e;
 	}
 
-	public Object visit(Module e) throws PrismLangException
+	public Object visit(parser.ast.Module e) throws PrismLangException
 	{
 		// Override this so we can keep track of when we are in an invariant
 		visitPre(e);
@@ -234,7 +234,7 @@ public class SemanticCheck extends ASTTraverse
 		return null;
 	}
 
-	public void visitPost(Module e) throws PrismLangException
+	public void visitPost(parser.ast.Module e) throws PrismLangException
 	{
 		// Register the fact we are leaving a module
 		inModule = null;
@@ -263,7 +263,7 @@ public class SemanticCheck extends ASTTraverse
 		int i, n;
 		String s, var;
 		Command c;
-		Module m;
+		parser.ast.Module m;
 		ModulesFile mf;
 		boolean isLocal, isGlobal;
 
