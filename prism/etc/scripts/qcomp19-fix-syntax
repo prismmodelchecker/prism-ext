@@ -1,0 +1,101 @@
+#! /usr/bin/perl -w
+
+use strict;
+
+#####
+# wrapper script for PRISM-ish tools, fixing two issues with the qcomp19 benchmark instances
+#  (1) if T=?[...], Tmin=?[...], Tmax=?[...] are unsupported, append a reward
+#    structure for time and replace the property with a reward-based one
+#  (2) comment out unsupported, reward-based properties (with F^{...} syntax)
+#
+# run:
+#  perl fix-syntax tool args
+# or
+#  fix-syntax tool args     (if fix-syntax is set to executable)
+#
+# Tweak the configuration flags below (set to 0 instead of 1 to deactivate).
+#
+# If needed, a copy of the model file and/or the property file is generated (with _fixed appended to the name)
+# and the corresponding argument in the command line is changed to the new name.
+#
+# v1
+# Joachim Klein, klein@tcs.inf.tu-dresden.de
+
+## configuration
+my $fix_t_properties = 1;        # fix T=?[...], Tmin=?[...], Tmax=?[...]
+my $ignore_reward_bounded = 1;   # remove properties with reward bounds, i.e., having F^{...} syntax
+
+
+###############################################################
+
+my $model_file_index;
+my $prop_file_index;
+
+# scan arguments for model file and properties file
+for (my $i=0; $i<@ARGV; $i++) {
+  if ($ARGV[$i] =~ /(\.prism$)|(\.[snp]m$)/) {   # model files: .prism, .pm, .nm, .sm
+    $model_file_index = $i if !defined $model_file_index;
+  } elsif ($ARGV[$i] =~ /(\.props$)|(\.prctl$)/) {
+    $prop_file_index = $i if !defined $prop_file_index;
+  }
+}
+
+my $add_time_reward_structure = 0;
+my $prop_changed = 0;
+
+if (defined $model_file_index && defined $prop_file_index) {
+  # we have found a model file and a properties file
+  my $model_file = $ARGV[$model_file_index];
+  my $prop_file = $ARGV[$prop_file_index];
+
+  my @prop_lines = load($prop_file);
+  foreach my $line (@prop_lines) {
+    # $line is bound to the array and can be modified inline
+    
+    if ($fix_t_properties && $line =~ s/T((min|max)?(=\?|>|<|<=|>=)\s*\[)/R{"time_reward"}$1/) {
+      # if we have replaced a T operator in the line, we also have to generate the corresponding
+      # reward structure
+      $add_time_reward_structure = 1;
+      $prop_changed = 1;
+      next;
+    }
+    
+    if ($ignore_reward_bounded && $line =~ /\^/) {
+      $line = '// '.$line;
+      $prop_changed = 1;
+    }
+  }
+  
+  if ($prop_changed) {
+    $prop_file.='_fixed';
+    open(OUT, ">", $prop_file) or die "Can not open $prop_file: $!\n";
+    print OUT @prop_lines;
+    close(OUT);
+
+    $ARGV[$prop_file_index] = $prop_file;
+  }
+
+  if ($add_time_reward_structure) {
+    my @model_lines = load($model_file);
+
+    $model_file .= '_fixed';
+    open(OUT, ">", $model_file) or die "Can not open $model_file: $!\n";
+    print OUT @model_lines;
+    print OUT "\n\nrewards \"time_reward\"\n  true: 1;\nendrewards\n\n";  # state reward 1
+    close(OUT);
+
+    $ARGV[$model_file_index] = $model_file;
+  }
+}
+
+# exec the tool, never return (on success)
+exec(@ARGV) or die "Can not execute ".join(" ", @ARGV)." : $!\n";
+
+
+sub load {
+  my $file = shift or die "No file";
+
+  open(IN, "< ", $file) or die "Can not open file $file: $!\n";
+  my @lines = <IN>;
+  return @lines;
+}
