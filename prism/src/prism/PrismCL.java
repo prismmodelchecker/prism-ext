@@ -36,6 +36,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import common.StackTraceHelper;
+import common.StopWatch;
 import parser.Values;
 import parser.ast.Expression;
 import parser.ast.ExpressionReward;
@@ -204,11 +205,15 @@ public class PrismCL implements PrismModelListener
 
 	private boolean exactConstants = false;
 
+	private StopWatch stopwatch = null;
+	private boolean reportRuntime = true;
+
 	/**
 	 * Entry point: call run method, catch CuddOutOfMemoryException
 	 */
 	public void go(String[] args) {
 		try {
+			stopwatch = new StopWatch().start();
 			run(args);
 		} catch (jdd.JDD.CuddOutOfMemoryException e) {
 			mainLog.println("\nCUDD internal error detected, from the following stack trace:");
@@ -518,6 +523,7 @@ public class PrismCL implements PrismModelListener
 		}
 
 		// close down
+		reportRuntime();
 		closeDown();
 	}
 
@@ -2531,6 +2537,14 @@ public class PrismCL implements PrismModelListener
 		mainLog.println();
 	}
 
+	private void reportRuntime()
+	{
+		if (stopwatch != null && reportRuntime) {
+			stopwatch.stop();
+			mainLog.println("\n\nOverall running time: " + stopwatch.elapsedSeconds() + " seconds.");
+		}
+	}
+
 	/**
 	 * Report a (non-fatal) error to the log.
 	 */
@@ -2559,6 +2573,7 @@ public class PrismCL implements PrismModelListener
 	 */
 	private void errorAndExit(String s)
 	{
+		reportRuntime();
 		prism.closeDown(false);
 		mainLog.println("\nError: " + s + ".");
 		mainLog.flush();
@@ -2570,6 +2585,7 @@ public class PrismCL implements PrismModelListener
 	 */
 	private void exit()
 	{
+		reportRuntime();
 		prism.closeDown(true);
 		System.exit(0);
 	}
@@ -2579,6 +2595,7 @@ public class PrismCL implements PrismModelListener
 	 */
 	private void exit(int i)
 	{
+		reportRuntime();
 		prism.closeDown(true);
 		System.exit(i);
 	}
