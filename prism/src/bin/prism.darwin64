@@ -121,14 +121,4 @@ if [ "$PRISM_DEBUG" != "" ]; then
 fi
 
 # Run PRISM through Java
-"$PRISM_JAVA" $PRISM_JAVA_ARG1 $PRISM_JAVA_ARG2 $PRISM_JAVA_DEBUG $PRISM_JAVAMAXMEM $PRISM_JAVASTACKSIZE "$PRISM_ICON" "$PRISM_DOCK_NAME" -Djava.awt.headless=$PRISM_HEADLESS -Djava.library.path="$JAVA_LIBRARY_PATH" -classpath "$PRISM_CLASSPATH" $PRISM_MAINCLASS "$@"
-
-PRISM_EXIT_CODE=$?
-
-if [ "$NOTIFY" = "yes" ]; then
-	if [ -n "`which growlnotify`" ]; then
-		growlnotify --image $PRISM_DIR/etc/icons/prism.ico PRISM has finished -m "" > /dev/null 2> /dev/null
-	fi
-fi;
-
-exit $PRISM_EXIT_CODE
+exec "$PRISM_JAVA" $PRISM_JAVA_ARG1 $PRISM_JAVA_ARG2 $PRISM_JAVA_DEBUG $PRISM_JAVAMAXMEM $PRISM_JAVASTACKSIZE "$PRISM_ICON" "$PRISM_DOCK_NAME" -Djava.awt.headless=$PRISM_HEADLESS -Djava.library.path="$JAVA_LIBRARY_PATH" -classpath "$PRISM_CLASSPATH" $PRISM_MAINCLASS "$@"
