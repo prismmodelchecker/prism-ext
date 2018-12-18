@@ -554,7 +554,11 @@ public class POMDPModelChecker extends MDPModelChecker
 			mainLog.print(mdp.infoStringTable());
 			//mainLog.println(mdp);
 			//mainLog.println(mdpTarget);
+			// Create MDP model checker (disable strat generation - if enabled, we want the POMDP one) 
 			MDPModelChecker mcMDP = new MDPModelChecker(this);
+			mcMDP.setExportAdv(false);
+			mcMDP.setGenStrat(false);
+			// Solve MDP to get inner bound
 			ModelCheckerResult mcRes = mcMDP.computeReachProbs(mdp, mdpTarget, true);
 			mainLog.println("Outer bound: " + rewardsForInitialBelief);
 			mainLog.println("Inner bound: " + mcRes.soln[0]);
@@ -1079,7 +1083,11 @@ public class POMDPModelChecker extends MDPModelChecker
 				Double rew = ((Double) mdp.getAction(ii, 0));
 				mdpRewardsNew.addToStateReward(ii, rew == null ? 0.0 : rew.doubleValue());
 			}
+			// Create MDP model checker (disable strat generation - if enabled, we want the POMDP one) 
 			MDPModelChecker mcMDP = new MDPModelChecker(this);
+			mcMDP.setExportAdv(false);
+			mcMDP.setGenStrat(false);
+			// Solve MDP to get inner bound
 			ModelCheckerResult mcRes = mcMDP.computeReachRewards(mdp, mdpRewardsNew, mdpTarget, true);
 			mainLog.println("Outer bound: " + rewardsForInitialBelief);
 			mainLog.println("Inner bound: " + mcRes.soln[0]);
