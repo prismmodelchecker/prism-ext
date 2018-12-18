@@ -44,6 +44,7 @@ import java.util.TreeSet;
 
 import prism.PrismComponent;
 import prism.PrismException;
+import prism.PrismNotSupportedException;
 import prism.PrismUtils;
 import cern.colt.Arrays;
 import explicit.rewards.MDPRewards;
@@ -77,6 +78,11 @@ public class POMDPModelChecker extends MDPModelChecker
 		long timer;
 		String stratFilename = null;
 
+		// Check for multiple initial states 
+		if (pomdp.getNumInitialStates() > 1) {
+			throw new PrismNotSupportedException("POMDP model checking does not yet support multiple initial states");
+		}
+		
 		// Local copy of setting
 		POMDPSolnMethod pomdpSolnMethod = this.pomdpSolnMethod;
 
@@ -591,6 +597,12 @@ public class POMDPModelChecker extends MDPModelChecker
 		ModelCheckerResult res = null;
 		long timer;
 		String stratFilename = null;
+		
+		// Check for multiple initial states 
+		if (pomdp.getNumInitialStates() > 1) {
+			throw new PrismNotSupportedException("POMDP model checking does not yet support multiple initial states");
+		}
+		
 		// Local copy of setting
 		POMDPSolnMethod pomdpSolnMethod = this.pomdpSolnMethod;
 
