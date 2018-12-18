@@ -39,6 +39,7 @@
 #include "PrismSparseGlob.h"
 #include "jnipointer.h"
 #include <new>
+#include <string>
 
 //The following gives more output on stdout. In fact quite a lot of it, usable only for ~10 state examples 
 //#define MORE_OUTPUT
@@ -116,6 +117,8 @@ JNIEXPORT jdoubleArray __jlongpointer JNICALL Java_sparse_PrismSparse_PS_1Nondet
 	jdoubleArray ret = 0;
 	// local copy of max_iters, since we will change it
 	int max_iters_local = max_iters;
+	// whether to export individual solution vectors (with adversaries)
+	bool export_vectors = false;
 	
 	// Extract some info about objectives
 	bool has_rewards = _ndsm_r != 0;
@@ -411,6 +414,7 @@ JNIEXPORT jdoubleArray __jlongpointer JNICALL Java_sparse_PrismSparse_PS_1Nondet
 					}
 					// see if the combined reward value is the min/max so far
 					bool pickThis = first || (min&&(d2<d1)) || (!min&&(d2>d1));
+
 					// if it equals the min/max do far for the combined reward value,
 					// but it is better for some individual reward, we choose it.
 					// not sure why
@@ -430,19 +434,28 @@ JNIEXPORT jdoubleArray __jlongpointer JNICALL Java_sparse_PrismSparse_PS_1Nondet
 						for (int it = 0; it < lenRew + lenProb; it++)
 							if (it != ignoredWeight)
 								pd1[it] = pd2[it];
-						// if adversary generation is enabled, remember optimal choice
+						// if adversary generation is enabled, store optimal choice
 						if (export_adv_enabled != EXPORT_ADV_NONE) {
-							// for max, only remember strictly better choices
-							// (this resolves problems with end components)
-							if (!min) {
-								if (adv[i] == -1 || (d1>soln[i])) {
+							// if this is the first choice to be picked, always store it
+							if (adv[i] == -1) {
+								adv[i] = j;
+							} else {
+								// otherwise it depends whether we're doing min or max
+								// (but sometimes min is max with negative rewards)
+								bool minAdv = min ? d1>0 : d1<0;
+								// for max, only remember strictly better choices
+								// (this resolves problems with end components)
+								// (note use of absolute values because values may be negative)
+								if (!minAdv) {
+									if (fabs(d1)>fabs(soln[i])) {
+										adv[i] = j;
+									}
+								}
+								// for min, always store the value
+								// (in fact, could do it at the end of value iteration, but we don't)
+								else {
 									adv[i] = j;
 								}
-							}
-							// for min, this is straightforward
-							// (in fact, could do it at the end of value iteration, but we don't)
-							else {
-								adv[i] = j;
 							}
 						}
 					}
@@ -681,6 +694,25 @@ JNIEXPORT jdoubleArray __jlongpointer JNICALL Java_sparse_PrismSparse_PS_1Nondet
 		if (export_adv_enabled != EXPORT_ADV_NONE) {
 			fclose(fp_adv);
 			PS_PrintToMainLog(env, "\nAdversary written to file \"%s\".\n", export_adv_filename);
+		}
+
+		// export individual solution vectors
+		if (export_adv_enabled != EXPORT_ADV_NONE && export_vectors) {
+			for (int it = 0; it < lenRew + lenProb; it++) {
+				if (it != ignoredWeight) {
+					std::string export_vect_filename(export_adv_filename);
+					export_vect_filename += ".vec";
+					export_vect_filename += std::to_string(it);
+					FILE *fp_vect = fopen(export_vect_filename.c_str(), "w");
+					if (fp_vect) {
+						PS_PrintWarningToMainLog(env, "Exporting solution vector %d to file %s.", it, export_vect_filename.c_str());
+						for (i = 0; i < n; i++) {
+							fprintf(fp_vect, "%d %g\n", i, psoln[it][i]);
+						}
+						fclose(fp_vect);
+					}
+				}
+			}
 		}
 	
 	// catch exceptions: register error, free memory

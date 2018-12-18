@@ -77,7 +77,11 @@ jint num_cvars
 	Cudd_Ref(diags);
 	q = DD_Apply(ddman, APPLY_PLUS, trans, DD_Apply(ddman, APPLY_TIMES, DD_Identity(ddman, rvars, cvars, num_rvars), diags));
 	
-	// if we are going to solve with the power method, we have to modify the matrix a bit
+	// If we are going to solve with the power method, we have to modify the matrix a bit
+	// in order to guarantee convergence. Hence, we compute the iteration matrix
+	// a = q * deltaT + I
+	// where I is the identity matrix.
+	// Please refer to "William J. Stewart: Introduction to the Numerical Solution of Markov Chains" p. 124. for details.
 	if (lin_eq_method == LIN_EQ_METHOD_POWER) {
 		// choose deltat
 		deltat = -0.99 / DD_FindMin(ddman, diags);
@@ -97,13 +101,18 @@ jint num_cvars
 	soln = NULL;
 	switch (lin_eq_method) {
 		case LIN_EQ_METHOD_POWER:
-			soln = jlong_to_DdNode(Java_mtbdd_PrismMTBDD_PM_1Power(env, cls, ptr_to_jlong(odd), ptr_to_jlong(rvars), num_rvars, ptr_to_jlong(cvars), num_cvars, ptr_to_jlong(a), ptr_to_jlong(b), ptr_to_jlong(init), true)); break;
+			soln = jlong_to_DdNode(Java_mtbdd_PrismMTBDD_PM_1Power(env, cls, ptr_to_jlong(odd), ptr_to_jlong(rvars), num_rvars, ptr_to_jlong(cvars), num_cvars, ptr_to_jlong(a), ptr_to_jlong(b), ptr_to_jlong(init), true));
+			break;
 		case LIN_EQ_METHOD_JACOBI:
-			soln = jlong_to_DdNode(Java_mtbdd_PrismMTBDD_PM_1JOR(env, cls, ptr_to_jlong(odd), ptr_to_jlong(rvars), num_rvars, ptr_to_jlong(cvars), num_cvars, ptr_to_jlong(a), ptr_to_jlong(b), ptr_to_jlong(init), true, 1.0)); break;
+			soln = jlong_to_DdNode(Java_mtbdd_PrismMTBDD_PM_1JOR(env, cls, ptr_to_jlong(odd), ptr_to_jlong(rvars), num_rvars, ptr_to_jlong(cvars), num_cvars, ptr_to_jlong(a), ptr_to_jlong(b), ptr_to_jlong(init), true, 1.0));
+			break;
 		case LIN_EQ_METHOD_JOR:
-			soln = jlong_to_DdNode(Java_mtbdd_PrismMTBDD_PM_1JOR(env, cls, ptr_to_jlong(odd), ptr_to_jlong(rvars), num_rvars, ptr_to_jlong(cvars), num_cvars, ptr_to_jlong(a), ptr_to_jlong(b), ptr_to_jlong(init), true, lin_eq_method_param)); break;
+			soln = jlong_to_DdNode(Java_mtbdd_PrismMTBDD_PM_1JOR(env, cls, ptr_to_jlong(odd), ptr_to_jlong(rvars), num_rvars, ptr_to_jlong(cvars), num_cvars, ptr_to_jlong(a), ptr_to_jlong(b), ptr_to_jlong(init), true, lin_eq_method_param));
+			break;
 		default:
-			PM_SetErrorMessage("Gauss-Seidel and its variants are currently not supported by the MTBDD engine"); return 0;
+			// set error message and return NULL pointer after cleanup, below
+			PM_SetErrorMessage("Gauss-Seidel and its variants are currently not supported by the MTBDD engine");
+			break;
 	}
 	
 	// normalise
