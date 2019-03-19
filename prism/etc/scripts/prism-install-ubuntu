@@ -7,16 +7,18 @@ set -x # Print commands as they are executed
 
 # Install dependencies: make/gcc/Java
 sudo apt-get update
-sudo apt -y install make gcc g++ default-jdk
+sudo apt -y install make gcc g++ default-jdk git
 
 # Install Python (only needed for testing (prism-auto) currently)
 sudo apt -y install python
 
-# Download the latest development version from GitHub
-git clone https://github.com/prismmodelchecker/prism.git
+# Download the version for QComp 2019 from GitHub
+git clone https://github.com/prismmodelchecker/prism-ext.git -b qcomp19-final prism.git
 
 # Compile PRISM and run a single test
 # (should ultimately display: "Testing result: PASS")
-cd prism/prism
-make
-make test
+(cd prism.git/prism && make && make test)
+
+# qcomp 2019 specific: generate symlinks to fix-syntax and the prism startup script
+ln -s prism.git/prism/etc/scripts/qcomp19-fix-syntax ./fix-syntax
+ln -s prism.git/prism/bin/prism ./prism
