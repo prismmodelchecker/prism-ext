@@ -2,11 +2,10 @@
 
 This is PRISM (Probabilistic Symbolic Model Checker).
 
-Note: This is the version of PRISM used for the QComp 2019 competition:
+Note: This is the version of PRISM used for the QComp 2020 competition:
 
-  http://qcomp.org/competition/2019/index.html
+  http://qcomp.org/competition/2020/index.html
 
-This is essentially the same as the public release PRISM 4.5.
 
 ## Installation
 
