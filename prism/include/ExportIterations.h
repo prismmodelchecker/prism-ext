@@ -58,12 +58,12 @@ public:
 		fprintf(fp, "<!-- For visualising the individual steps of a value iteration computation -->\n");
 		fprintf(fp, "<!-- Loads supporting Javascript and CSS from www.prismmodelchecker.org -->\n");
 		fprintf(fp, "<title>%s</title>\n", title);
-		fprintf(fp, "<link rel='stylesheet' href='http://www.prismmodelchecker.org/js/res/iteration-vis-v1.css'>\n");
-		fprintf(fp, "<script src=\"http://www.prismmodelchecker.org/js/res/d3.js-v4/d3.min.js\"></script>\n");
+		fprintf(fp, "<link rel='stylesheet' href='https://www.prismmodelchecker.org/js/res/iteration-vis-v1.css'>\n");
+		fprintf(fp, "<script src=\"https://www.prismmodelchecker.org/js/res/d3.js-v4/d3.min.js\"></script>\n");
 		fprintf(fp, "<body onload='init();'>\n");
 		fprintf(fp, "<h1>%s</h1>\n", title);
 		fprintf(fp, "<svg></svg>\n");
-		fprintf(fp, "<script src=\"http://www.prismmodelchecker.org/js/res/iteration-vis-v1.js\"></script>\n");
+		fprintf(fp, "<script src=\"https://www.prismmodelchecker.org/js/res/iteration-vis-v1.js\"></script>\n");
 	}
 
 	/**
@@ -76,9 +76,9 @@ public:
 	/**
 	 * Export the given vector, with size n and given type (0 = normal, VI from below, 1 = VI from above)
 	 */
-	void exportVector(double *soln, int n, int type) {
+	void exportVector(double *soln, int64_t n, int type) {
 		fprintf(fp, "<script>addVector([");
-		for (int i = 0; i < n; i++) {
+		for (int64_t i = 0; i < n; i++) {
 			if (i>0) fprintf(fp, ",");
 			double d = soln[i];
 			if (std::isinf(d)) {
@@ -103,7 +103,7 @@ public:
 		double* vec = mtbdd_to_double_vector(ddman, dd, rvars, num_rvars, odd);
 
 		// get number of states
-		int n = odd->eoff + odd->toff;
+		int64_t n = odd->eoff + odd->toff;
 
 		exportVector(vec, n, type);
 		delete[] vec;

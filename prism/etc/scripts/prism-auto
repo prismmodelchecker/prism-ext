@@ -71,12 +71,7 @@ def isWindows():
 
 # compare two files (with filenames f1,f2) for equality
 def compareFiles(f1,f2):
-    # We open the files in 'rU' mode (universal newline mode),
-    # which automatically converts all the different newline
-    # encodings to '\n'.
-    # This allow the two files to differ in their
-    # line ending encodings without affecting equality
-    with open(f1, 'rU') as fp1, open(f2, 'rU') as fp2:
+    with open(f1, 'r') as fp1, open(f2, 'r') as fp2:
         while True:
             s1 = fp1.readline()
             s2 = fp2.readline()
@@ -1057,6 +1052,8 @@ if options.nailgun:
         print(options.prismExec + " -ng &")
     else:
         restartNailGunServer();
+
+# process benchmarks
 for arg in args:
     if os.path.isdir(arg):
         benchmarkDir(arg)
@@ -1064,4 +1061,11 @@ for arg in args:
         benchmarkFile(arg)
     else:
         print("Error: File/directory " + arg + " does not exist")
+
+# shutdown
+if options.test and options.testAll and not options.echo:
+    if testStats['FAILURE'] > 0:
+        # report via the exit code that there were actual failures in test + test-all mode
+        closeDown(1)
+
 closeDown(0)

@@ -180,7 +180,7 @@ public class GUIPrism extends JFrame
 	private PrismLog theLog;
 
 	//gui components
-	private ArrayList plugs;
+	private ArrayList<GUIPlugin> plugs;
 	private JTabbedPane theTabs;
 	private GUIPlugin logPlug;
 	private GUIEventHandler eventHandle;
@@ -226,7 +226,6 @@ public class GUIPrism extends JFrame
 		}
 
 		// Create new file chooser which starts in current directory
-		choose = new JFileChooser();
 		File currentDir = new File(".");
 		// If current directory is the bin directory, go up one level (mainly for Windows version)
 		try {
@@ -236,7 +235,8 @@ public class GUIPrism extends JFrame
 		} catch (IOException e) {
 			currentDir = new File(".");
 		}
-		choose.setCurrentDirectory(currentDir);
+		// create the chooser
+		choose = new JFileChooser(currentDir);
 
 		logPlug = null;
 		eventHandle = new GUIEventHandler(this);
@@ -283,8 +283,7 @@ public class GUIPrism extends JFrame
 		});
 		//Setup pluggable screens in here
 		plugs = getPluginArray(this);
-		for (int i = 0; i < plugs.size(); i++) {
-			GUIPlugin plug = (GUIPlugin) plugs.get(i);
+		for (GUIPlugin plug : plugs) {
 			if (plug.displaysTab()) {
 				theTabs.addTab(plug.getTabText(), plug);
 				theTabs.setEnabledAt(theTabs.getComponentCount() - 1, plug.isEnabled());
@@ -397,6 +396,10 @@ public class GUIPrism extends JFrame
 		setIconImage(GUIPrism.getIconFromImage("smallPrism.png").getImage());
 		getContentPane().setSize(new java.awt.Dimension(800, 600));
 		pack();
+
+		for (GUIPlugin plug : plugs) {
+			plug.onInitComponentsCompleted();
+		}
 	}
 
 	public void passCLArgs(String args[])
