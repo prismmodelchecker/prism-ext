@@ -13,7 +13,7 @@ import re
 
 # configuration
 prism_bin = './fix-syntax ./prism'
-prism_mem_args = '--javamaxmem 11g'
+prism_mem_args = '-javamaxmem 11g -cuddmaxmem 4g'
 
 # instance specific settings
 
@@ -39,11 +39,18 @@ def get_name():
 def is_benchmark_supported(benchmark : Benchmark):
     """returns True if the provided benchmark is supported by the tool and if the given benchmark should appear on the generated benchmark list"""
 
+    # Check for unsupported input languages: everything but PRISM currently
     if benchmark.is_prism():
-        # check for unsupported property types
+        # Temporarily disable pacman - very slow
+        if benchmark.get_model_short_name() == "pacman":
+            return False
+        # Check for unsupported property types: just reward bounded currently
         if benchmark.is_reward_bounded_probabilistic_reachability() or benchmark.is_reward_bounded_expected_reward():
             return False
+        #print("{},{},{},{}".format(benchmark.get_identifier(),benchmark.get_model_type(),benchmark.get_property_type(),benchmark.get_max_num_states()))
         return True
+    else:
+        return False
 
 def get_prism_invocation_model_prop_instance(benchmark : Benchmark):
     args = "{} {} --property {}".format(benchmark.get_prism_program_filename(), benchmark.get_prism_property_filename(), benchmark.get_property_name())
@@ -70,21 +77,40 @@ def get_invocations(benchmark : Benchmark):
 
     basic_args = "{}".format(prism_mem_args);
 
-    # default settings
-    default_args = basic_args
-    default_inv = Invocation()
-    default_inv.identifier = "default"
-    default_inv.track_id = "epsilon-correct"
-    default_inv.add_command("{} {} {}".format(prism_bin, default_args, benchmark_instance))
-    invocations.append(default_inv)
+    # default / correct
+#     default_args = basic_args
+#     default_inv = Invocation()
+#     default_inv.identifier = "default"
+#     default_inv.track_id = "correct"
+#     default_inv.add_command("{} {} {} -exact".format(prism_bin, default_args, benchmark_instance))
+#     invocations.append(default_inv)
+
+    # default settings / epsilon-correct
+    if (benchmark.get_model_type() != "pta"):
+        default_args = basic_args
+        default_track_args = "-ii -maxiters 1000000 -ddextraactionvars 100 -ex"
+        default_inv = Invocation()
+        default_inv.identifier = "default"
+        default_inv.track_id = "epsilon-correct"
+        default_inv.add_command("{} {} {} {}".format(prism_bin, default_args, default_track_args, benchmark_instance))
+        invocations.append(default_inv)
+
+    # default settings / often-epsilon-correct
+#     default_args = basic_args
+#     default_track_args = ""
+#     default_inv = Invocation()
+#     default_inv.identifier = "default"
+#     default_inv.track_id = "often-epsilon-correct"
+#     default_inv.add_command("{} {} {} {}".format(prism_bin, default_args, default_track_args, benchmark_instance))
+#     invocations.append(default_inv)
 
     # specific settings                     !!!!only information about model type, property type and state space size via benchmark.get_num_states_tweak() may be used for tweaking
-    specific_inv = Invocation()
-    specific_inv.identifier = "specific"
-    specific_inv.track_id = "epsilon-correct"
-    specific_args = get_specific_setting(benchmark)
-    specific_inv.add_command("{} {} {} {}".format(prism_bin, basic_args, benchmark_instance, specific_args))
-    invocations.append(specific_inv)
+#     specific_inv = Invocation()
+#     specific_inv.identifier = "specific"
+#     specific_inv.track_id = "epsilon-correct"
+#     specific_args = get_specific_setting(benchmark)
+#     specific_inv.add_command("{} {} {} {}".format(prism_bin, basic_args, benchmark_instance, specific_args))
+#     invocations.append(specific_inv)
 
     #### TODO: add default and specific invocations for other track_ids 'correct', 'probably-epsilon-correct', 'often-epsilon-correct', 'often-epsilon-correct-10-min'
     ### remember that different tracks have different precisions
