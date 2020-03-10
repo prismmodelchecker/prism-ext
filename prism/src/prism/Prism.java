@@ -3017,8 +3017,6 @@ public class Prism extends PrismComponent implements PrismSettingsListener
 			lastEngine = getEngine();
 			setEngine(Prism.SPARSE);
 			settings.set(PrismSettings.PRISM_LIN_EQ_METHOD, "Backwards Gauss-Seidel");
-			settings.set(PrismSettings.PRISM_MDP_SOLN_METHOD, "Gauss-Seidel");
-			settings.set(PrismSettings.PRISM_MDP_MULTI_SOLN_METHOD, "Gauss-Seidel");
 
 		}
 		// Auto-switch engine if required
@@ -3076,8 +3074,6 @@ public class Prism extends PrismComponent implements PrismSettingsListener
 					lastEngine = getEngine();
 					setEngine(Prism.MTBDD);
 					settings.set(PrismSettings.PRISM_LIN_EQ_METHOD, "Jacobi");
-					settings.set(PrismSettings.PRISM_MDP_SOLN_METHOD, "Value iteration");
-					settings.set(PrismSettings.PRISM_MDP_MULTI_SOLN_METHOD, "Value iteration");
 				}
 			}
 
