@@ -2980,7 +2980,7 @@ public class Prism extends PrismComponent implements PrismSettingsListener
 	{
 		Result res = null;
 		Values definedPFConstants = propertiesFile.getConstantValues();
-		boolean engineSwitch = false;
+		boolean engineSwitch = false, switchToMTBDDEngine = false;
 		int lastEngine = -1;
 
 		if (!digital)
@@ -3008,6 +3008,18 @@ public class Prism extends PrismComponent implements PrismSettingsListener
 			FastAdaptiveUniformisationModelChecker fauMC;
 			fauMC = new FastAdaptiveUniformisationModelChecker(this, currentModulesFile, propertiesFile);
 			return fauMC.check(prop.getExpression());
+		}
+		// Heuristic choices of engine/method
+		mainLog.println(settings.getString(PrismSettings.PRISM_HEURISTIC));
+		if (settings.getString(PrismSettings.PRISM_HEURISTIC).equals("Speed")) {
+			mainLog.printWarning("Switching to sparse engine and (backwards) Gauss Seidel (default for heuristic=speed).");
+			engineSwitch = true;
+			lastEngine = getEngine();
+			setEngine(Prism.SPARSE);
+			settings.set(PrismSettings.PRISM_LIN_EQ_METHOD, "Backwards Gauss-Seidel");
+			settings.set(PrismSettings.PRISM_MDP_SOLN_METHOD, "Gauss-Seidel");
+			settings.set(PrismSettings.PRISM_MDP_MULTI_SOLN_METHOD, "Gauss-Seidel");
+
 		}
 		// Auto-switch engine if required
 		if (currentModelType == ModelType.MDP && !Expression.containsMultiObjective(prop.getExpression())) {
@@ -3044,14 +3056,28 @@ public class Prism extends PrismComponent implements PrismSettingsListener
 							+ "Either switch to the explicit engine or add more action labels to the model");
 			}
 
-			if (!getExplicit() && !engineSwitch && getEngine() != MTBDD) {
-				// check if we need to switch to MTBDD engine
+			// Check if we need to switch to MTBDD engine
+			if (!getExplicit() && getEngine() != MTBDD) {
 				long n = currentModel.getNumStates();
+				// Either because number of states is two big for double-valued solution vectors
 				if (n == -1 || n > Integer.MAX_VALUE) {
 					mainLog.printWarning("Switching to MTBDD engine, as number of states is too large for " + engineStrings[getEngine()] + " engine.");
+					switchToMTBDDEngine = true;
+				}
+				// Or based on heuristic choices of engine/method
+				// (sparse/hybrid typically v slow if need to work with huge state spaces)
+				if (settings.getString(PrismSettings.PRISM_HEURISTIC).equals("Speed") && n > 100000000) {
+					mainLog.printWarning("Switching to MTBDD engine (default for heuristic=speed and this state space size).");
+					switchToMTBDDEngine = true;
+				}
+				// NB: Need to make sure solution methods supported for MTBDDs are used
+				if (switchToMTBDDEngine) {
 					engineSwitch = true;
 					lastEngine = getEngine();
 					setEngine(Prism.MTBDD);
+					settings.set(PrismSettings.PRISM_LIN_EQ_METHOD, "Jacobi");
+					settings.set(PrismSettings.PRISM_MDP_SOLN_METHOD, "Value iteration");
+					settings.set(PrismSettings.PRISM_MDP_MULTI_SOLN_METHOD, "Value iteration");
 				}
 			}
 
