@@ -3010,7 +3010,6 @@ public class Prism extends PrismComponent implements PrismSettingsListener
 			return fauMC.check(prop.getExpression());
 		}
 		// Heuristic choices of engine/method
-		mainLog.println(settings.getString(PrismSettings.PRISM_HEURISTIC));
 		if (settings.getString(PrismSettings.PRISM_HEURISTIC).equals("Speed")) {
 			mainLog.printWarning("Switching to sparse engine and (backwards) Gauss Seidel (default for heuristic=speed).");
 			engineSwitch = true;
@@ -3064,7 +3063,7 @@ public class Prism extends PrismComponent implements PrismSettingsListener
 				}
 				// Or based on heuristic choices of engine/method
 				// (sparse/hybrid typically v slow if need to work with huge state spaces)
-				if (settings.getString(PrismSettings.PRISM_HEURISTIC).equals("Speed") && n > 100000000) {
+				else if (settings.getString(PrismSettings.PRISM_HEURISTIC).equals("Speed") && n > 100000000) {
 					mainLog.printWarning("Switching to MTBDD engine (default for heuristic=speed and this state space size).");
 					switchToMTBDDEngine = true;
 				}
