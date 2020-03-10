@@ -42,12 +42,12 @@ def is_benchmark_supported(benchmark : Benchmark):
     # Check for unsupported input languages: everything but PRISM currently
     if benchmark.is_prism():
         # Temporarily disable pacman - very slow
-        if benchmark.get_model_short_name() == "pacman":
-            return False
+#         if benchmark.get_model_short_name() == "pacman":
+#             return False
         # Check for unsupported property types: just reward bounded currently
         if benchmark.is_reward_bounded_probabilistic_reachability() or benchmark.is_reward_bounded_expected_reward():
             return False
-        #print("{},{},{},{}".format(benchmark.get_identifier(),benchmark.get_model_type(),benchmark.get_property_type(),benchmark.get_max_num_states()))
+#        print("{},{},{},{}".format(benchmark.get_identifier(),benchmark.get_model_type(),benchmark.get_property_type(),benchmark.get_max_num_states()))
         return True
     else:
         return False
@@ -77,44 +77,119 @@ def get_invocations(benchmark : Benchmark):
 
     basic_args = "{}".format(prism_mem_args);
 
-    # default / correct
-#     default_args = basic_args
-#     default_inv = Invocation()
-#     default_inv.identifier = "default"
-#     default_inv.track_id = "correct"
-#     default_inv.add_command("{} {} {} -exact".format(prism_bin, default_args, benchmark_instance))
-#     invocations.append(default_inv)
-
-    # default settings / epsilon-correct
+    # epsilon-correct (all models but PTAs), default settings
     if (benchmark.get_model_type() != "pta"):
-        default_args = basic_args
-        default_track_args = "-ii -maxiters 1000000 -ddextraactionvars 100 -ex"
+        # Use interval iteration generally (or uniformisation for time-bounded CTMCs)
+        default_args = "-ii"
+        # Choose engine heuristically
+        default_args += " -heuristic speed"
+        # Required precision (default anyway)
+        default_args += " -e 1e-6"
+        # Usual II settings when there is plenty of memory
+        default_args += " -ddextraactionvars 100"
+        # Increase maxiters (since QComp has a timeout anyway)
+        default_args += " -maxiters 1000000"
         default_inv = Invocation()
         default_inv.identifier = "default"
         default_inv.track_id = "epsilon-correct"
-        default_inv.add_command("{} {} {} {}".format(prism_bin, default_args, default_track_args, benchmark_instance))
+        default_inv.add_command(prism_bin + " " + basic_args + " " +  default_args + " " +  benchmark_instance)
         invocations.append(default_inv)
 
-    # default settings / often-epsilon-correct
-#     default_args = basic_args
-#     default_track_args = ""
-#     default_inv = Invocation()
-#     default_inv.identifier = "default"
-#     default_inv.track_id = "often-epsilon-correct"
-#     default_inv.add_command("{} {} {} {}".format(prism_bin, default_args, default_track_args, benchmark_instance))
-#     invocations.append(default_inv)
+    # epsilon-correct (all models but PTAs), specific settings
+    if (benchmark.get_model_type() != "pta"):
+        # Choose method/engine
+        # Use interval iteration generally (or uniformisation for time-bounded CTMCs)
+        if benchmark.get_model_short_name() == "haddad-monmege":
+            specific_args = "-exact"
+        elif (benchmark.get_num_states_tweak() == None or benchmark.get_num_states_tweak() >= 20000000):
+            specific_args = "-ii -mtbdd"
+        else:
+            specific_args = "-ii -heuristic speed"
+        # Required precision (default anyway)
+        specific_args += " -e 1e-6"
+        # Usual II settings when there is plenty of memory
+        specific_args += " -ddextraactionvars 100"
+        # Increase maxiters (since QComp has a timeout anyway)
+        specific_args += " -maxiters 1000000"
+        specific_inv = Invocation()
+        specific_inv.identifier = "specific"
+        specific_inv.track_id = "epsilon-correct"
+        specific_inv.add_command(prism_bin + " " + basic_args + " " +  specific_args + " " +  benchmark_instance)
+        invocations.append(specific_inv)
+    
+    # often-epsilon-correct (all models), default settings
+    if (True):
+        # Choose engine heuristically
+        default_args = "-heuristic speed"
+        # Required precision (just use default 1e-6, as agreed for QComp'19)
+        default_args += " -e 1e-6"
+        # Increase maxiters (since QComp has a timeout anyway)
+        default_args += " -maxiters 1000000"
+        default_inv = Invocation()
+        default_inv.identifier = "default"
+        default_inv.track_id = "often-epsilon-correct"
+        default_inv.add_command(prism_bin + " " + basic_args + " " +  default_args + " " +  benchmark_instance)
+        invocations.append(default_inv)
+        
+    # often-epsilon-correct (all models), specific settings
+    if (True):
+        # Choose method/engine
+        if benchmark.get_model_short_name() == "haddad-monmege":
+            specific_args = "-exact"
+        elif (benchmark.get_num_states_tweak() == None or benchmark.get_num_states_tweak() >= 20000000):
+            specific_args = "-mtbdd"
+        else:
+            specific_args = "-heuristic speed"
+        # Required precision (just use default 1e-6, as agreed for QComp'19)
+        specific_args += " -e 1e-6"
+        # Increase maxiters (since QComp has a timeout anyway)
+        specific_args += " -maxiters 1000000"
+        specific_inv = Invocation()
+        specific_inv.identifier = "specific"
+        specific_inv.track_id = "often-epsilon-correct"
+        specific_inv.add_command(prism_bin + " " + basic_args + " " +  specific_args + " " +  benchmark_instance)
+        invocations.append(specific_inv)
+        
+    # probably-epsilon-correct (all models but PTAs), default settings
+    if (benchmark.get_model_type() != "pta"):
+        # Use interval iteration generally (or uniformisation for time-bounded CTMCs)
+        default_args = "-ii"
+        # Choose engine heuristically
+        default_args += " -heuristic speed"
+        # Required precision (default anyway)
+        default_args += " -e 1e-3"
+        # Usual II settings when there is plenty of memory
+        default_args += " -ddextraactionvars 100"
+        # Increase maxiters (since QComp has a timeout anyway)
+        default_args += " -maxiters 1000000"
+        default_inv = Invocation()
+        default_inv.identifier = "default"
+        default_inv.track_id = "probably-epsilon-correct"
+        default_inv.add_command(prism_bin + " " + basic_args + " " +  default_args + " " +  benchmark_instance)
+        invocations.append(default_inv)
 
-    # specific settings                     !!!!only information about model type, property type and state space size via benchmark.get_num_states_tweak() may be used for tweaking
-#     specific_inv = Invocation()
-#     specific_inv.identifier = "specific"
-#     specific_inv.track_id = "epsilon-correct"
-#     specific_args = get_specific_setting(benchmark)
-#     specific_inv.add_command("{} {} {} {}".format(prism_bin, basic_args, benchmark_instance, specific_args))
-#     invocations.append(specific_inv)
-
-    #### TODO: add default and specific invocations for other track_ids 'correct', 'probably-epsilon-correct', 'often-epsilon-correct', 'often-epsilon-correct-10-min'
-    ### remember that different tracks have different precisions
-
+    # probably-epsilon-correct (all models but PTAs), specific settings
+    if (benchmark.get_model_type() != "pta"):
+        # Choose method/engine
+        # Use interval iteration generally (or uniformisation for time-bounded CTMCs)
+        if benchmark.get_model_short_name() == "haddad-monmege":
+            specific_args = "-exact"
+        elif (benchmark.get_num_states_tweak() == None or benchmark.get_num_states_tweak() >= 20000000):
+            specific_args = "-ii -mtbdd"
+        else:
+            specific_args = "-ii -heuristic speed"
+        # Required precision (default anyway)
+        specific_args += " -e 1e-3"
+        # Usual II settings when there is plenty of memory
+        specific_args += " -ddextraactionvars 100"
+        # Increase maxiters (since QComp has a timeout anyway)
+        specific_args += " -maxiters 1000000"
+        specific_inv = Invocation()
+        specific_inv.identifier = "specific"
+        specific_inv.track_id = "probably-epsilon-correct"
+        specific_inv.add_command(prism_bin + " " + basic_args + " " +  specific_args + " " +  benchmark_instance)
+        invocations.append(specific_inv)
+    
     return invocations
 
 def grep_for_result(benchmark : Benchmark, log) :
