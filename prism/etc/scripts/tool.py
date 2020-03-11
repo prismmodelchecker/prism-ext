@@ -153,11 +153,12 @@ def get_invocations(benchmark : Benchmark):
     # probably-epsilon-correct (all models but PTAs), default settings
     if (benchmark.get_model_type() != "pta"):
         # Use interval iteration generally (or uniformisation for time-bounded CTMCs)
-        default_args = "-ii"
+        if (benchmark.get_model_type() == "ctmc" and benchmark.is_time_bounded_probabilistic_reachability()):
+            default_args = ""
+        else:
+            default_args = "-ii -e 2e-5"
         # Choose engine heuristically
         default_args += " -heuristic speed"
-        # Required precision (default anyway)
-        default_args += " -e 1e-3"
         # Usual II settings when there is plenty of memory
         default_args += " -ddextraactionvars 100"
         # Increase maxiters (since QComp has a timeout anyway)
@@ -174,12 +175,12 @@ def get_invocations(benchmark : Benchmark):
         # Use interval iteration generally (or uniformisation for time-bounded CTMCs)
         if benchmark.get_model_short_name() == "haddad-monmege":
             specific_args = "-exact"
+        elif (benchmark.get_model_type() == "ctmc" and benchmark.is_time_bounded_probabilistic_reachability()):
+            specific_args = ""
         elif (benchmark.get_num_states_tweak() == None or benchmark.get_num_states_tweak() >= 20000000):
-            specific_args = "-ii -mtbdd"
+            specific_args = "-ii -e 2e-5 -mtbdd"
         else:
-            specific_args = "-ii -heuristic speed"
-        # Required precision (default anyway)
-        specific_args += " -e 1e-3"
+            specific_args = "-ii -e 2e-5 -heuristic speed"
         # Usual II settings when there is plenty of memory
         specific_args += " -ddextraactionvars 100"
         # Increase maxiters (since QComp has a timeout anyway)
