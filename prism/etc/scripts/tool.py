@@ -156,7 +156,7 @@ def get_invocations(benchmark : Benchmark):
         if (benchmark.get_model_type() == "ctmc" and benchmark.is_time_bounded_probabilistic_reachability()):
             default_args = ""
         else:
-            default_args = "-ii -e 2e-5"
+            default_args = "-ii -e 5e-2"
         # Choose engine heuristically
         default_args += " -heuristic speed"
         # Usual II settings when there is plenty of memory
@@ -178,9 +178,9 @@ def get_invocations(benchmark : Benchmark):
         elif (benchmark.get_model_type() == "ctmc" and benchmark.is_time_bounded_probabilistic_reachability()):
             specific_args = ""
         elif (benchmark.get_num_states_tweak() == None or benchmark.get_num_states_tweak() >= 20000000):
-            specific_args = "-ii -e 2e-5 -mtbdd"
+            specific_args = "-ii -e 5e-2 -mtbdd"
         else:
-            specific_args = "-ii -e 2e-5 -heuristic speed"
+            specific_args = "-ii -e 5e-2 -heuristic speed"
         # Usual II settings when there is plenty of memory
         specific_args += " -ddextraactionvars 100"
         # Increase maxiters (since QComp has a timeout anyway)
