@@ -13,7 +13,7 @@ sudo apt -y install make gcc g++ default-jdk git
 sudo apt -y install python
 
 # Download the version for QComp 2020 from GitHub
-git clone https://github.com/prismmodelchecker/prism-ext.git -b qcomp20 prism.git
+git clone https://github.com/prismmodelchecker/prism-ext.git -b qcomp20-final prism.git
 
 # Compile PRISM and run a single test
 # (should ultimately display: "Testing result: PASS")
