@@ -1,6 +1,6 @@
 # Update
 
-Support for POMDPs (and POPTAs) has now been improved integrated into the main release of PRISM:
+Support for POMDPs (and POPTAs) has now been improved and integrated into the main release of PRISM:
 
 * https://github.com/prismmodelchecker/prism
 
